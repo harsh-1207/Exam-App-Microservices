@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam System</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+            margin: 0;
+            padding: 0;
+            color: #333;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+        }
+
+        h1 {
+            font-size: 3rem;
+            margin-bottom: 2rem;
+            color: #fff;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.3);
+        }
+
+        .links {
+            display: flex;
+            gap: 20px;
+        }
+
+        a {
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        a[href="/login"] {
+            background-color: #fff;
+            color: #4facfe;
+            border: 2px solid #4facfe;
+        }
+
+        a[href="/login"]:hover {
+            background-color: #4facfe;
+            color: #fff;
+        }
+
+        a[href="/register"] {
+            background-color: #fff;
+            color: #00c6ff;
+            border: 2px solid #00c6ff;
+        }
+
+        a[href="/register"]:hover {
+            background-color: #00c6ff;
+            color: #fff;
+        }
+    </style>
+</head>
+<body>
+<h1>Exam Portal</h1>
+<div class="links">
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
+</div>
+</body>
+</html>

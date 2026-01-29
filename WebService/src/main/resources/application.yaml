@@ -1,0 +1,6 @@
+server:
+  port: 8083
+
+  servlet:
+    session:
+      timeout: 15m   # auto logout after 15 minutes inactivity

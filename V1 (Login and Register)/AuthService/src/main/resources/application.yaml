@@ -1,0 +1,16 @@
+server:
+  port: 8081
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/auth_db
+    username: root
+    password: Mockingbird@1234
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+
+jwt:
+  secret: "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd"
+  internalSecret: "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd"

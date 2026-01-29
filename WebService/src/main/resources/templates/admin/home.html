@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            margin: 0;
+            padding: 0;
+            min-height: 100vh;
+            color: #fff;
+        }
+
+        nav {
+            background: rgba(0,0,0,0.3);
+            padding: 15px 30px;
+            display: flex;
+            justify-content: flex-end;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+        }
+
+        nav button {
+            background: #e74c3c;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            color: #fff;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        nav button:hover {
+            background: #c0392b;
+        }
+
+        main {
+            text-align: center;
+            margin-top: 60px;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.5);
+        }
+
+        p {
+            font-size: 1.2rem;
+        }
+    </style>
+</head>
+<body>
+<nav>
+    <form action="/logout" method="get">
+        <button type="submit">Logout</button>
+    </form>
+</nav>
+<main>
+    <h1>Admin Dashboard</h1>
+    <p>This is an admin called <span th:text="${name}"></span></p>
+</main>
+</body>
+</html>
