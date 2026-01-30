@@ -34,25 +34,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http.csrf(csrf -> csrf.disable());
+        http
+                .csrf(csrf -> csrf.disable())
 
-        http.authorizeHttpRequests(auth -> auth
-                // this is where AuthService calls to create a profile, using the internal key (POST)
-                .requestMatchers(HttpMethod.POST, "/users").authenticated()
-                // only accessible to roles STUDENT, TEACHER, or ADMIN (GET)
-                .requestMatchers(HttpMethod.GET, "/users/**")
-                .hasAnyRole("STUDENT","TEACHER","ADMIN")
-                // any other is authenticated
-                .anyRequest().authenticated()
-        );
+                .authorizeHttpRequests(auth -> auth
+                        // this is where AuthService calls to create a profile, using the internal key (POST)
+                        .requestMatchers(HttpMethod.POST, "/users").authenticated()
+                        // only accessible to roles STUDENT, TEACHER, or ADMIN (GET)
+                        .requestMatchers(HttpMethod.GET, "/users/**")
+                        .hasAnyRole("STUDENT","TEACHER","ADMIN")
+                        // any other is authenticated
+                        .anyRequest().authenticated()
+                )
 
-        // FIRST: internal service auth
-        // InternalAuthFilter runs → checks if the request is an internal POST to /users with the correct X-INTERNAL-KEY.
-        http.addFilterBefore(internalAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                // FIRST: internal service auth
+                // InternalAuthFilter runs → checks if the request is an internal POST to /users with the correct X-INTERNAL-KEY.
+                .addFilterBefore(internalAuthFilter, UsernamePasswordAuthenticationFilter.class)
 
-        // SECOND: JWT auth for users
-        // JwtFilter runs → validates JWTs for user-facing requests
-        http.addFilterAfter(jwtFilter, InternalAuthFilter.class);
+                // SECOND: JWT auth for users
+                // JwtFilter runs → validates JWTs for user-facing requests
+                .addFilterAfter(jwtFilter, InternalAuthFilter.class);
 
         return http.build();
     }
