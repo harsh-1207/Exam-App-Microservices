@@ -1,27 +1,31 @@
+server:
+  port: 8080
+
 spring:
   application:
     name: API-GATEWAY
 
   cloud:
     gateway:
-      server:
-        webflux:
-          routes:
-            - id: auth-service
-              uri: lb://AUTH-SERVICE
-              predicates:
-                - Path=/auth/**
-            - id: user-service
-              uri: lb://USER-SERVICE
-              predicates:
-                - Path=/users/**
-          default-filters:
-            - RemoveRequestHeader=Cookie
-
-server:
-  port: 8080
+      routes:
+        - id: auth-service
+          uri: lb://AUTH-SERVICE
+          predicates:
+            - Path=/auth/**
+        - id: user-service
+          uri: lb://USER-SERVICE
+          predicates:
+            - Path=/users/**
+        - id: exam-service
+          uri: lb://EXAM-SERVICE
+          predicates:
+            - Path=/exam/**
+      default-filters:
+        - RemoveRequestHeader=Cookie
 
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true

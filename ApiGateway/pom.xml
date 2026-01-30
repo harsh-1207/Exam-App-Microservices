@@ -5,6 +5,7 @@
                              https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
+	<!-- Parent POM: brings in Spring Boot defaults and plugin management -->
 	<parent>
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
@@ -12,38 +13,39 @@
 		<relativePath/>
 	</parent>
 
+	<!-- Project coordinates -->
 	<groupId>com.harshbisht</groupId>
 	<artifactId>ApiGateway</artifactId>
 	<version>0.0.1-SNAPSHOT</version>
 	<name>ApiGateway</name>
 	<description>Spring Cloud Gateway for learning</description>
 
+	<!-- Properties for Java and Spring Cloud versions -->
 	<properties>
 		<java.version>21</java.version>
 		<spring-cloud.version>2025.0.1</spring-cloud.version>
 	</properties>
 
 	<dependencies>
-		<!-- Spring Boot WebFlux (required for Gateway) -->
+		<!-- WebFlux: reactive web stack required by Spring Cloud Gateway -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-webflux</artifactId>
 		</dependency>
 
-		<!-- Spring Security -->
+		<!-- Security: enables authentication/authorization filters in Gateway -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-security</artifactId>
 		</dependency>
 
-		<!-- Spring Cloud Gateway -->
+		<!-- Spring Cloud Gateway core dependency -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-gateway-server-webflux</artifactId>
 		</dependency>
 
-
-		<!-- JWT -->
+		<!-- JWT libraries: used for parsing and validating tokens in Gateway -->
 		<dependency>
 			<groupId>io.jsonwebtoken</groupId>
 			<artifactId>jjwt-api</artifactId>
@@ -61,16 +63,20 @@
 			<version>0.11.5</version>
 			<scope>runtime</scope>
 		</dependency>
+
+		<!-- Eureka client: allows Gateway to discover services registered in Eureka -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
 		</dependency>
+
+		<!-- LoadBalancer: required for lb://SERVICE-NAME routing in Gateway -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>
 			<artifactId>spring-cloud-starter-loadbalancer</artifactId>
 		</dependency>
 
-		<!-- For testing -->
+		<!-- Testing dependencies -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-test</artifactId>
@@ -83,6 +89,7 @@
 		</dependency>
 	</dependencies>
 
+	<!-- Import Spring Cloud BOM to manage versions consistently -->
 	<dependencyManagement>
 		<dependencies>
 			<dependency>
@@ -97,7 +104,7 @@
 
 	<build>
 		<plugins>
-			<!-- Spring Boot Maven Plugin -->
+			<!-- Spring Boot Maven Plugin: enables packaging and running the app -->
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>

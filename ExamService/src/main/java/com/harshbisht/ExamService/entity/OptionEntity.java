@@ -1,9 +1,9 @@
 package com.harshbisht.ExamService.entity;
 
-import jakarta.persistence.Entity;
-import lombok.Data;
-
-@Entity
-@Data
+//import jakarta.persistence.Entity;
+//import lombok.Data;
+//
+//@Entity
+//@Data
 public class OptionEntity {
 }
