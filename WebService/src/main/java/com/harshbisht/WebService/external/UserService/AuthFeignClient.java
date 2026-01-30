@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
-@FeignClient(name = "auth-service", url = "http://localhost:8080")
+@FeignClient(name = "AUTH-SERVICE")
 public interface AuthFeignClient {
     @PostMapping("/auth/register")  // use /auth/** so Gateway routes correctly
     String register(@RequestBody RegisterRequest req);

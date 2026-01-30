@@ -14,6 +14,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
 import java.io.IOException;
 import java.util.List;
+
 /*
 Flow :
 A user calls GET /users/{id} with Authorization: Bearer <token>.
@@ -23,6 +24,7 @@ Controller checks if id matches userId or if user has ROLE_ADMIN.
 If valid → returns profile.
 If invalid/expired → request blocked with 401 Unauthorized.
  */
+
 @Component
 @RequiredArgsConstructor
 public class JwtFilter extends OncePerRequestFilter {
@@ -33,37 +35,47 @@ public class JwtFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
-        // Looks for Authorization: Bearer <token>
+
         String header = request.getHeader("Authorization");
 
-        if (header != null && header.startsWith("Bearer ")) {
-            try {
-                // extract token and claims from header
-                String token = header.substring(7);
-                Claims claims = jwtUtil.extractClaims(token);
+        // If no token → continue, security rules will block later
+        if (header == null || !header.startsWith("Bearer ")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
-                String role = claims.get("role", String.class);
-                Long userId = claims.get("userId", Long.class);
+        try {
+            String token = header.substring(7);
+            Claims claims = jwtUtil.extractClaims(token);
 
-                // Creates a Spring Security authentication object:
-                // claims.getSubject() → usually the email.
-                // ROLE_<role> → attaches the user’s role as an authority.
+            String role = claims.get("role", String.class);
+            String email = claims.getSubject();
+
+            // 🔥 Prevent overriding existing authentication
+            if (SecurityContextHolder.getContext().getAuthentication() == null) {
+
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                claims.getSubject(),
+                                email,
                                 null,
                                 List.of(new SimpleGrantedAuthority("ROLE_" + role))
                         );
+
                 SecurityContextHolder.getContext().setAuthentication(auth);
-
-                // Attach userId to request
-                request.setAttribute("userId", userId);
-
-            } catch (Exception e) {
-                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
-                return;
             }
+
+            // Attach userId only if present (SERVICE token doesn't have it)
+            if (claims.get("userId") != null) {
+                Long userId = ((Number) claims.get("userId")).longValue();
+                request.setAttribute("userId", userId);
+            }
+
+        } catch (Exception e) {
+            SecurityContextHolder.clearContext();
+            response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+            return;
         }
+
         filterChain.doFilter(request, response);
     }
 }

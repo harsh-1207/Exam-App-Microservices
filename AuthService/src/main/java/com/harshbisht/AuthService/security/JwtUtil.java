@@ -34,6 +34,18 @@ public class JwtUtil {
                 .compact();
     }
 
+    // 🏢 SERVICE TOKEN
+    public String generateServiceToken() {
+        return Jwts.builder()
+                .setSubject("AUTH-SERVICE")
+                .claim("role", "SERVICE")
+                .claim("type", "SERVICE")
+                .setIssuedAt(new Date())
+                .setExpiration(new Date(System.currentTimeMillis() + 600000)) // 10 min
+                .signWith(Keys.hmacShaKeyFor(SECRET.getBytes()))
+                .compact();
+    }
+
     // Validates and parses a JWT.
     public Claims extractClaims(String token) {
         return Jwts.parserBuilder()

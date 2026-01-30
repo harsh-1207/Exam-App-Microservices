@@ -6,7 +6,7 @@ import com.harshbisht.AuthService.dto.UserEntity;
 import com.harshbisht.AuthService.entity.AuthUser;
 import com.harshbisht.AuthService.entity.Role;
 import com.harshbisht.AuthService.exception.*;
-import com.harshbisht.AuthService.external.UserService.UserFeignClient;
+import com.harshbisht.AuthService.external.UserFeignClient;
 import com.harshbisht.AuthService.repository.AuthUserRepository;
 import com.harshbisht.AuthService.security.JwtUtil;
 import jakarta.transaction.Transactional;
@@ -23,8 +23,6 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final UserFeignClient userFeign;
     private final JwtUtil jwtUtil;
-
-    private final String internalKey ="supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
 
     @Transactional
     public String register(RegisterRequest req) {
@@ -55,7 +53,7 @@ public class AuthService {
             profile.setName(req.getName());
 
             UserEntity savedUser =
-                    userFeign.createUser(profile, internalKey);
+                    userFeign.createUser(profile);
 
             // Link userId from user service
             user.setUserId(savedUser.getId());
