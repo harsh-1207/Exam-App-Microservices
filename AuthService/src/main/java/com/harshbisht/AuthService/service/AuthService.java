@@ -11,7 +11,6 @@ import com.harshbisht.AuthService.repository.AuthUserRepository;
 import com.harshbisht.AuthService.security.JwtUtil;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 

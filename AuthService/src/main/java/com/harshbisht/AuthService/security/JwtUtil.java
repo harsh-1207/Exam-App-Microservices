@@ -22,7 +22,7 @@ public class JwtUtil {
     //@Value("${jwt.secret}")
     private String SECRET = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
 
-    // Builds a JWT for a given user.
+    // USER TOKEN (For when user is making a request)
     public String generateToken(AuthUser user) {
         return Jwts.builder()
                 .setSubject(user.getEmail())
@@ -34,7 +34,7 @@ public class JwtUtil {
                 .compact();
     }
 
-    // 🏢 SERVICE TOKEN
+    // SERVICE TOKEN (For when a service is making a request)
     public String generateServiceToken() {
         return Jwts.builder()
                 .setSubject("AUTH-SERVICE")
