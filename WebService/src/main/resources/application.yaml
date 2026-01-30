@@ -1,5 +1,13 @@
+spring:
+  application:
+    name: WEB-SERVICE
 server:
   port: 8083
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
 
   servlet:
     session:

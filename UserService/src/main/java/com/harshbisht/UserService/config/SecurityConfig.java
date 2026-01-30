@@ -1,6 +1,5 @@
 package com.harshbisht.UserService.config;
 
-import com.harshbisht.UserService.security.InternalAuthFilter;
 import com.harshbisht.UserService.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
@@ -8,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 /*
@@ -28,7 +28,6 @@ Request proceeds if valid.
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final InternalAuthFilter internalAuthFilter;
     private final JwtFilter jwtFilter;
 
     @Bean
@@ -36,25 +35,24 @@ public class SecurityConfig {
 
         http
                 .csrf(csrf -> csrf.disable())
-
+                .sessionManagement(sess ->
+                        sess.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+                )
                 .authorizeHttpRequests(auth -> auth
-                        // this is where AuthService calls to create a profile, using the internal key (POST)
-                        .requestMatchers(HttpMethod.POST, "/users").authenticated()
-                        // only accessible to roles STUDENT, TEACHER, or ADMIN (GET)
+
+                        // 🔥 ONLY AUTH SERVICE (SERVICE TOKEN) CAN CREATE USER
+                        .requestMatchers(HttpMethod.POST, "/users")
+                        .hasRole("SERVICE")
+
+                        // Normal users can view
                         .requestMatchers(HttpMethod.GET, "/users/**")
-                        .hasAnyRole("STUDENT","TEACHER","ADMIN")
-                        // any other is authenticated
+                        .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+
                         .anyRequest().authenticated()
                 )
-
-                // FIRST: internal service auth
-                // InternalAuthFilter runs → checks if the request is an internal POST to /users with the correct X-INTERNAL-KEY.
-                .addFilterBefore(internalAuthFilter, UsernamePasswordAuthenticationFilter.class)
-
-                // SECOND: JWT auth for users
-                // JwtFilter runs → validates JWTs for user-facing requests
-                .addFilterAfter(jwtFilter, InternalAuthFilter.class);
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }
+
 }
