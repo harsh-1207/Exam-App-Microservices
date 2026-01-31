@@ -40,7 +40,7 @@ public class PageController {
         // Call AuthService -> /auth/login
         String loginRole = pageService.login(req, session);
 
-        return "redirect:/" + loginRole + "/home";
+        return "redirect:/" + loginRole.toLowerCase() + "/home";
     }
 
     @GetMapping("/register")

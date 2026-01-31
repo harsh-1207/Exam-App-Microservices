@@ -1,13 +1,14 @@
 package com.harshbisht.ExamService.dto;
 
-//import lombok.AllArgsConstructor;
-//import lombok.Builder;
-//import lombok.Data;
-//import lombok.NoArgsConstructor;
-//
-//@Data
-//@AllArgsConstructor
-//@NoArgsConstructor
-//@Builder
+import lombok.Builder;
+import lombok.Data;
+
+import java.util.List;
+
+@Data
+@Builder
 public class AddQuestionRequest {
+    private Long examId;
+    private String questionText;
+    private List<OptionDTO> options;  // exactly 4
 }
