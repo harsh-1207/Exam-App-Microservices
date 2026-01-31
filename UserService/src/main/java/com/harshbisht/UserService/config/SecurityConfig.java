@@ -40,7 +40,7 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
-                        // 🔥 ONLY AUTH SERVICE (SERVICE TOKEN) CAN CREATE USER
+                        // ONLY AUTH SERVICE (SERVICE TOKEN) CAN CREATE USER
                         .requestMatchers(HttpMethod.POST, "/users")
                         .hasRole("SERVICE")
 

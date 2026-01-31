@@ -1,4 +1,4 @@
-package com.harshbisht.WebService.external.UserService;
+package com.harshbisht.WebService.external;
 
 import com.harshbisht.WebService.dto.AuthResponse;
 import com.harshbisht.WebService.dto.LoginRequest;

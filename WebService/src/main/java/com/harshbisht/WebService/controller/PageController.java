@@ -3,7 +3,8 @@ package com.harshbisht.WebService.controller;
 import com.harshbisht.WebService.dto.AuthResponse;
 import com.harshbisht.WebService.dto.LoginRequest;
 import com.harshbisht.WebService.dto.RegisterRequest;
-import com.harshbisht.WebService.external.UserService.AuthFeignClient;
+import com.harshbisht.WebService.external.AuthFeignClient;
+import com.harshbisht.WebService.service.PageService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
@@ -20,7 +21,7 @@ View (student/home.html) renders with the user’s email displayed.
 @RequiredArgsConstructor
 public class PageController {
 
-    private final AuthFeignClient authFeign;
+    private final PageService pageService;
 
     @GetMapping("/")
     public String home() {
@@ -36,26 +37,10 @@ public class PageController {
     @PostMapping("/login")
     public String login(LoginRequest req, HttpSession session) {
 
-        // call login from AuthService, and get the token
-        AuthResponse response = authFeign.login(req);
-        String token = response.getToken();
+        // Call AuthService -> /auth/login
+        String loginRole = pageService.login(req, session);
 
-        // Store token in session
-        session.setAttribute("token", token);
-
-        // Decode ONLY non-sensitive info (no signature validation here)
-        String[] parts = token.split("\\.");
-        String payload = new String(java.util.Base64.getUrlDecoder().decode(parts[1]));
-
-        String role = payload.contains("STUDENT") ? "STUDENT"
-                : payload.contains("TEACHER") ? "TEACHER"
-                : "ADMIN";
-
-        // TODO: need to call UserService, getUserByEmail, add name in session
-        session.setAttribute("role", role);
-        session.setAttribute("email", req.getEmail());
-
-        return "redirect:/" + role.toLowerCase() + "/home";
+        return "redirect:/" + loginRole + "/home";
     }
 
     @GetMapping("/register")
@@ -66,7 +51,7 @@ public class PageController {
 
     @PostMapping("/register")
     public String register(RegisterRequest req) {
-        authFeign.register(req);
+        pageService.register(req);
         return "redirect:/login";
     }
 
