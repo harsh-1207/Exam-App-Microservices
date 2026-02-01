@@ -10,6 +10,5 @@ import java.util.List;
 public class QuestionResponse {
     private Long id;
     private String questionText;
-    private List<OptionDTO> options;
+    private List<OptionRequest> options;
 }
-

@@ -10,4 +10,3 @@ public class ExamResponse {
     private String title;
     private boolean published;
 }
-

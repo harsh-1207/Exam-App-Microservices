@@ -11,7 +11,8 @@ import java.util.List;
 @Entity
 @Table(name = "subjects")
 @Data
-@NoArgsConstructor @AllArgsConstructor
+@NoArgsConstructor
+@AllArgsConstructor
 public class SubjectEntity {
 
     @Id

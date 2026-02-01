@@ -10,5 +10,5 @@ import java.util.List;
 public class AddQuestionRequest {
     private Long examId;
     private String questionText;
-    private List<OptionDTO> options;  // exactly 4
+    private List<OptionRequest> options;  // exactly 4
 }
