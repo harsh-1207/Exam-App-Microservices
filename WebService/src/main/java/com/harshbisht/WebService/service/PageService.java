@@ -21,6 +21,7 @@ public class PageService {
 
         // Store token in session
         session.setAttribute("token", token);
+        session.setAttribute("authResponse", response);
 
         // Decode ONLY non-sensitive info (no signature validation here)
         String[] parts = token.split("\\.");

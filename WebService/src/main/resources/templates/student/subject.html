@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Subjects</title>
+</head>
+<body>
+
+<h2>Available Subjects</h2>
+
+<ul>
+  <li th:each="sub : ${subjects}">
+    <a th:href="@{/student/exams/{id}(id=${sub.id})}" th:text="${sub.name}"></a>
+  </li>
+</ul>
+
+</body>
+</html>

@@ -1,4 +1,4 @@
-package com.harshbisht.ExamService.dto;
+package com.harshbisht.ExamService.dto.ExamDTO;
 
 import lombok.Builder;
 import lombok.Data;

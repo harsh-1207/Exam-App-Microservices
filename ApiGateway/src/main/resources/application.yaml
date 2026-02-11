@@ -15,6 +15,10 @@ spring:
               uri: lb://USER-SERVICE
               predicates:
                 - Path=/users/**
+            - id: exam-service
+              uri: lb://EXAM-SERVICE
+              predicates:
+                - Path=/subjects/**, /exams/**, /questions/**
           default-filters:
             - RemoveRequestHeader=Cookie
 

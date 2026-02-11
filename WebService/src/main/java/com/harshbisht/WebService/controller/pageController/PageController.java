@@ -1,9 +1,7 @@
-package com.harshbisht.WebService.controller;
+package com.harshbisht.WebService.controller.pageController;
 
-import com.harshbisht.WebService.dto.AuthResponse;
 import com.harshbisht.WebService.dto.LoginRequest;
 import com.harshbisht.WebService.dto.RegisterRequest;
-import com.harshbisht.WebService.external.AuthFeignClient;
 import com.harshbisht.WebService.service.PageService;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;

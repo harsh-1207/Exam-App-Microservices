@@ -1,7 +1,7 @@
 package com.harshbisht.ExamService.service;
 
-import com.harshbisht.ExamService.dto.CreateSubjectRequest;
-import com.harshbisht.ExamService.dto.SubjectResponse;
+import com.harshbisht.ExamService.dto.SubjectDTO.CreateSubjectRequest;
+import com.harshbisht.ExamService.dto.SubjectDTO.SubjectResponse;
 import com.harshbisht.ExamService.entity.SubjectEntity;
 import com.harshbisht.ExamService.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
@@ -15,22 +15,60 @@ public class SubjectService {
 
     private final SubjectRepository subjectRepository;
 
-    public List<SubjectEntity> getAllSubjects() {
-        return subjectRepository.findAll();
+    public List<SubjectResponse> getAllSubjects() {
+        return subjectRepository.findAll()
+                .stream()
+                .map(this::mapToDTO)
+                .toList();
     }
 
-    public SubjectEntity createSubject(CreateSubjectRequest request) {
-        // check for existence
-        String currSubject = request.getName().trim();
-        Boolean exists = subjectRepository.existsByNameIgnoreCase(currSubject);
+    public SubjectResponse createSubject(CreateSubjectRequest request) {
 
-        if(!exists) {
+        String currSubject = request.getName().trim();
+
+        if (subjectRepository.existsByNameIgnoreCase(currSubject)) {
             throw new RuntimeException("Subject Already Exists");
         }
 
-        // create the subject
         SubjectEntity subject = new SubjectEntity();
         subject.setName(currSubject);
-        return subjectRepository.save(subject);
+
+        return mapToDTO(subjectRepository.save(subject));
     }
+
+    public SubjectResponse editSubject(Long subjectId, CreateSubjectRequest request) {
+
+        SubjectEntity subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject Not Found"));
+
+        subject.setName(request.getName().trim());
+
+        return mapToDTO(subjectRepository.save(subject));
+    }
+
+    public void deleteSubject(Long subjectId) {
+
+        SubjectEntity subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+
+        if (!subject.getExams().isEmpty()) {
+            throw new RuntimeException("Cannot delete subject with exams");
+        }
+
+        subjectRepository.delete(subject);
+    }
+
+    private SubjectResponse mapToDTO(SubjectEntity subject) {
+        return SubjectResponse.builder()
+                .id(subject.getId())
+                .name(subject.getName())
+                .build();
+    }
+
+    public SubjectResponse getSubject(Long subjectId) {
+        SubjectEntity subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new RuntimeException("Subject not found"));
+        return new SubjectResponse(subject.getId(), subject.getName());
+    }
+
 }

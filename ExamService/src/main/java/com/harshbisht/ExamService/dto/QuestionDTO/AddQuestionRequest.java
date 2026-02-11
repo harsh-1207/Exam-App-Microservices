@@ -1,5 +1,6 @@
-package com.harshbisht.ExamService.dto;
+package com.harshbisht.ExamService.dto.QuestionDTO;
 
+import com.harshbisht.ExamService.dto.OptionDTO.OptionRequest;
 import lombok.Builder;
 import lombok.Data;
 

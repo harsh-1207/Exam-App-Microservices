@@ -1,7 +1,7 @@
 package com.harshbisht.ExamService.controller;
 
-import com.harshbisht.ExamService.dto.AddQuestionRequest;
-import com.harshbisht.ExamService.entity.QuestionEntity;
+import com.harshbisht.ExamService.dto.QuestionDTO.AddQuestionRequest;
+import com.harshbisht.ExamService.dto.QuestionDTO.QuestionResponse;
 import com.harshbisht.ExamService.service.QuestionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -17,16 +17,14 @@ public class QuestionController {
 
     // 🔹 Get all questions of an exam
     @GetMapping
-    public List<QuestionEntity> getQuestions(@PathVariable Long examId) {
+    public List<QuestionResponse> getQuestions(@PathVariable Long examId) {
         return questionService.getAllQuestionsByExam(examId);
     }
 
     // 🔹 Add question to exam
     @PostMapping
-    public QuestionEntity addQuestion(
-            @PathVariable Long examId,
-            @RequestBody AddQuestionRequest request
-    ) {
+    public QuestionResponse addQuestion(@PathVariable Long examId,
+                                        @RequestBody AddQuestionRequest request) {
         return questionService.addQuestionInExam(examId, request);
     }
 }

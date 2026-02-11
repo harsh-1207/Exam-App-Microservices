@@ -1,5 +1,6 @@
 package com.harshbisht.WebService.config;
 
+import com.harshbisht.WebService.dto.AuthResponse;
 import com.harshbisht.WebService.exception.RoleMismatchException;
 import com.harshbisht.WebService.exception.SessionExpiredException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -8,10 +9,11 @@ import jakarta.servlet.http.HttpSession;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.config.annotation.*;
+
 /*
 Flow:
 User logs in → session is created, with attributes:
-    token → JWT or session token.
+    authResponse → contains JWT token.
     role → STUDENT / TEACHER / ADMIN.
 
 User navigates to /student/home.
@@ -41,15 +43,20 @@ public class WebConfig implements WebMvcConfigurer {
         @Override
         public boolean preHandle(HttpServletRequest req,
                                  HttpServletResponse res,
-                                 Object handler) throws Exception {
+                                 Object handler) {
 
             HttpSession session = req.getSession(false);
+
+            AuthResponse auth =
+                    session != null
+                            ? (AuthResponse) session.getAttribute("authResponse")
+                            : null;
 
             // Custom Exceptions
             // Getting Handled at GlobalExceptionHandler
 
             // session expired -> back to login page
-            if (session == null || session.getAttribute("token") == null) {
+            if (auth == null || auth.getToken() == null) {
                 throw new SessionExpiredException("Session expired or not logged in");
             }
 
@@ -71,6 +78,5 @@ public class WebConfig implements WebMvcConfigurer {
 
             return true;
         }
-
     }
 }

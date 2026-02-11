@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title>Subjects</title>
+    <title>Manage Subjects</title>
     <style>
         body { font-family: Arial; background:#f4f6f9; padding:40px; }
         h2 { text-align:center; }
@@ -29,6 +29,7 @@
             text-decoration: none;
             color: white;
             font-size: 14px;
+            cursor: pointer;
         }
 
         .exam-btn { background:#2196F3; }
@@ -36,13 +37,55 @@
             display:block; width:200px; margin:20px auto;
             padding:10px; background:#4CAF50; text-align:center;
         }
+
+        .back-btn {
+            display:block; width:200px; margin:20px auto;
+            padding:10px; background:#555; text-align:center;
+        }
+
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+        }
+        .modal-content {
+            background: #fff;
+            margin: 10% auto;
+            padding: 20px;
+            width: 400px;
+            border-radius: 6px;
+            text-align: center;
+        }
+        .close {
+            float: right;
+            font-size: 20px;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
 
-<h2>Subjects</h2>
+<h2>Manage Subjects</h2>
 
-<a th:href="@{/teacher/subjects/add}" class="btn add-btn">Add Subject</a>
+<!-- Add Subject Button -->
+<button class="btn add-btn" onclick="openModal()">Add Subject</button>
+
+<!-- Modal -->
+<div id="subjectModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <h3>Add New Subject</h3>
+        <form th:action="@{/teacher/subjects}" method="post">
+            <input type="text" name="name" placeholder="Enter subject name" required>
+            <br><br>
+            <button type="submit" class="btn exam-btn">Add</button>
+        </form>
+    </div>
+</div>
 
 <table>
     <tr>
@@ -55,15 +98,24 @@
         <td th:text="${subject.id}"></td>
         <td th:text="${subject.name}"></td>
         <td>
-            <!-- 🔥 GO TO EXAMS OF THIS SUBJECT -->
             <a th:href="@{/teacher/subjects/{id}/exams(id=${subject.id})}"
                class="btn exam-btn">
                 View Exams
             </a>
         </td>
     </tr>
-
 </table>
+
+<a th:href="@{/teacher/home}" class="btn back-btn">Back to Home</a>
+
+<script>
+    function openModal() {
+        document.getElementById("subjectModal").style.display = "block";
+    }
+    function closeModal() {
+        document.getElementById("subjectModal").style.display = "none";
+    }
+</script>
 
 </body>
 </html>

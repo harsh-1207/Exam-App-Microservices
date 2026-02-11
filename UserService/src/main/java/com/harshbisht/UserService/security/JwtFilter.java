@@ -54,14 +54,17 @@ public class JwtFilter extends OncePerRequestFilter {
             // 🔥 Prevent overriding existing authentication
             if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
+                Long userId = ((Number) claims.get("userId")).longValue();
+
                 UsernamePasswordAuthenticationToken auth =
                         new UsernamePasswordAuthenticationToken(
-                                email,
+                                userId,
                                 null,
                                 List.of(new SimpleGrantedAuthority("ROLE_" + role))
                         );
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
+
             }
 
             // Attach userId only if present (SERVICE token doesn't have it)

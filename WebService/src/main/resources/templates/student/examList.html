@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <title>Exams</title>
+</head>
+<body>
+
+<h2>Exams in Subject</h2>
+
+<table border="1">
+  <tr>
+    <th>Exam</th>
+    <th>Duration</th>
+    <th>Action</th>
+  </tr>
+  <tr th:each="exam : ${exams}">
+    <td th:text="${exam.title}"></td>
+    <td th:text="${exam.duration} + ' mins'"></td>
+    <td>
+      <a th:href="@{/student/takeExam/{id}(id=${exam.id})}">Start</a>
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

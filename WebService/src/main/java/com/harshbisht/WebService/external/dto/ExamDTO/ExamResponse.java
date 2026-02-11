@@ -1,10 +1,8 @@
-package com.harshbisht.ExamService.dto;
+package com.harshbisht.WebService.external.dto.ExamDTO;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 @Data
-@AllArgsConstructor
 public class ExamResponse {
     private Long id;
     private String title;

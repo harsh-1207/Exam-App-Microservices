@@ -27,7 +27,7 @@ Flow:
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     //@Value("${jwt.secret}")
-    private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd0";
+    private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
 
     // The main method that runs for each request.
     @Override

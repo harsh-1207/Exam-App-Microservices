@@ -1,4 +1,4 @@
-package com.harshbisht.ExamService.dto;
+package com.harshbisht.WebService.external.dto.SubjectDTO;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 
 @Data
 @Builder
-public class SubjectResponse {
-    private Long id;
+@AllArgsConstructor
+@NoArgsConstructor
+public class CreateSubjectRequest {
     private String name;
 }

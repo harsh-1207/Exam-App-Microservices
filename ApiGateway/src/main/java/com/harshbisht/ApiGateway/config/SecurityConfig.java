@@ -17,9 +17,9 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeExchange(ex -> ex
-                        .pathMatchers("/auth/**").permitAll()       // allowed without authentication
-                        .anyExchange().authenticated()                          // Every other request must be authenticated
+                        .anyExchange().permitAll()
                 )
                 .build();
     }
 }
+
