@@ -24,6 +24,10 @@ public class SubjectService {
 
     public SubjectResponse createSubject(CreateSubjectRequest request) {
 
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new RuntimeException("Subject name cannot be empty");
+        }
+
         String currSubject = request.getName().trim();
 
         if (subjectRepository.existsByNameIgnoreCase(currSubject)) {
@@ -38,10 +42,21 @@ public class SubjectService {
 
     public SubjectResponse editSubject(Long subjectId, CreateSubjectRequest request) {
 
+        if (request.getName() == null || request.getName().isBlank()) {
+            throw new RuntimeException("Subject name cannot be empty");
+        }
+
+        String currSubject = request.getName().trim();
+
         SubjectEntity subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new RuntimeException("Subject Not Found"));
 
-        subject.setName(request.getName().trim());
+        if (subjectRepository.existsByNameIgnoreCase(currSubject)
+                && !subject.getName().equalsIgnoreCase(currSubject)) {
+            throw new RuntimeException("Subject name already exists");
+        }
+
+        subject.setName(currSubject);
 
         return mapToDTO(subjectRepository.save(subject));
     }

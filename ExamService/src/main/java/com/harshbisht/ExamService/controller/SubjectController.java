@@ -2,7 +2,6 @@ package com.harshbisht.ExamService.controller;
 
 import com.harshbisht.ExamService.dto.SubjectDTO.CreateSubjectRequest;
 import com.harshbisht.ExamService.dto.SubjectDTO.SubjectResponse;
-import com.harshbisht.ExamService.entity.SubjectEntity;
 import com.harshbisht.ExamService.service.SubjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -17,29 +16,51 @@ public class SubjectController {
 
     private final SubjectService subjectService;
 
-    @GetMapping
-    public ResponseEntity<List<SubjectResponse>> getAllSubjects() {
-        return ResponseEntity.ok(subjectService.getAllSubjects());
-    }
+    // TEACHER / ADMIN APIs
 
     @PostMapping
-    public ResponseEntity<SubjectResponse> createSubject(@RequestBody CreateSubjectRequest request) {
-        return ResponseEntity.ok(subjectService.createSubject(request));
-    }
+    public ResponseEntity<SubjectResponse> createSubject(
+            @RequestBody CreateSubjectRequest request) {
 
-    @GetMapping("/{subjectId}")
-    public ResponseEntity<SubjectResponse> getSubject(@PathVariable Long subjectId) {
-        return ResponseEntity.ok(subjectService.getSubject(subjectId));
+        return ResponseEntity.ok(
+                subjectService.createSubject(request)
+        );
     }
 
     @PutMapping("/{subjectId}")
-    public ResponseEntity<SubjectResponse> editSubject(@PathVariable Long subjectId, @RequestBody CreateSubjectRequest request) {
-        return ResponseEntity.ok(subjectService.editSubject(subjectId, request));
+    public ResponseEntity<SubjectResponse> updateSubject(
+            @PathVariable Long subjectId,
+            @RequestBody CreateSubjectRequest request) {
+
+        return ResponseEntity.ok(
+                subjectService.editSubject(subjectId, request)
+        );
     }
 
     @DeleteMapping("/{subjectId}")
-    public ResponseEntity<Void> deleteSubject(@PathVariable Long subjectId) {
+    public ResponseEntity<Void> deleteSubject(
+            @PathVariable Long subjectId) {
+
         subjectService.deleteSubject(subjectId);
         return ResponseEntity.noContent().build();
+    }
+
+    // COMMON APIs (Teacher + Student)
+
+    @GetMapping
+    public ResponseEntity<List<SubjectResponse>> getAllSubjects() {
+
+        return ResponseEntity.ok(
+                subjectService.getAllSubjects()
+        );
+    }
+
+    @GetMapping("/{subjectId}")
+    public ResponseEntity<SubjectResponse> getSubject(
+            @PathVariable Long subjectId) {
+
+        return ResponseEntity.ok(
+                subjectService.getSubject(subjectId)
+        );
     }
 }

@@ -4,6 +4,7 @@ import com.harshbisht.ExamService.dto.QuestionDTO.AddQuestionRequest;
 import com.harshbisht.ExamService.dto.QuestionDTO.QuestionResponse;
 import com.harshbisht.ExamService.service.QuestionService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -15,16 +16,56 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    // 🔹 Get all questions of an exam
-    @GetMapping
-    public List<QuestionResponse> getQuestions(@PathVariable Long examId) {
-        return questionService.getAllQuestionsByExam(examId);
+    // TEACHER APIs
+
+    @PostMapping
+    public ResponseEntity<QuestionResponse> addQuestion(
+            @PathVariable Long examId,
+            @RequestBody AddQuestionRequest request) {
+
+        return ResponseEntity.ok(
+                questionService.addQuestionInExam(examId, request)
+        );
     }
 
-    // 🔹 Add question to exam
-    @PostMapping
-    public QuestionResponse addQuestion(@PathVariable Long examId,
-                                        @RequestBody AddQuestionRequest request) {
-        return questionService.addQuestionInExam(examId, request);
+    @PutMapping("/{questionId}")
+    public ResponseEntity<QuestionResponse> updateQuestion(
+            @PathVariable Long examId,
+            @PathVariable Long questionId,
+            @RequestBody AddQuestionRequest request) {
+
+        return ResponseEntity.ok(
+                questionService.updateQuestion(examId, questionId, request)
+        );
+    }
+
+    @DeleteMapping("/{questionId}")
+    public ResponseEntity<Void> deleteQuestion(
+            @PathVariable Long examId,
+            @PathVariable Long questionId) {
+
+        questionService.deleteQuestion(examId, questionId);
+        return ResponseEntity.noContent().build();
+    }
+
+    // COMMON API
+
+    @GetMapping
+    public ResponseEntity<List<QuestionResponse>> getQuestions(
+            @PathVariable Long examId) {
+
+        return ResponseEntity.ok(
+                questionService.getAllQuestionsByExam(examId)
+        );
+    }
+
+    @GetMapping("/{questionId}")
+    public ResponseEntity<QuestionResponse> getQuestionById(
+            @PathVariable Long examId,
+            @PathVariable Long questionId) {
+
+        return ResponseEntity.ok(
+                questionService.getQuestionById(examId, questionId)
+        );
     }
 }
