@@ -19,6 +19,11 @@ spring:
               uri: lb://EXAM-SERVICE
               predicates:
                 - Path=/subjects/**, /exams/**, /questions/**
+
+            - id: result-service
+              uri: lb://RESULT-SERVICE
+              predicates:
+                - Path=/result/**
           default-filters:
             - RemoveRequestHeader=Cookie
 

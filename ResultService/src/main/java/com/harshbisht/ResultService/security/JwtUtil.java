@@ -1,4 +1,4 @@
-package com.harshbisht.ExamService.security;
+package com.harshbisht.ResultService.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

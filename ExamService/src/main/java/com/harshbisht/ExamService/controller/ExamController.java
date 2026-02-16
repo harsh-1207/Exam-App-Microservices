@@ -7,7 +7,6 @@ import com.harshbisht.ExamService.dto.ExamDTO.ExamResponse;
 import com.harshbisht.ExamService.service.ExamService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.CurrentSecurityContext;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
