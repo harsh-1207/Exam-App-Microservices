@@ -1,6 +1,7 @@
 package com.harshbisht.UserService.config;
 
-import com.harshbisht.UserService.security.JwtFilter;
+//import com.harshbisht.UserService.security.JwtFilter;
+import com.harshbisht.UserService.security.HeaderAuthFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -28,10 +29,17 @@ Request proceeds if valid.
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final JwtFilter jwtFilter;
+    //    private final JwtFilter jwtFilter;
+    private final HeaderAuthFilter headerAuthFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+
+//        http.csrf(csrf -> csrf.disable());
+//
+//        http.sessionManagement(session ->
+//                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+//        );
 
         http
                 .csrf(csrf -> csrf.disable())
@@ -49,8 +57,9 @@ public class SecurityConfig {
                         .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 
                         .anyRequest().authenticated()
-                )
-                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+                );
+        http.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
+//                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

@@ -35,7 +35,7 @@ public class SecurityConfig {
                 )
                 .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
                 // It runs before the default username/password filter.
-                //This ensures JWTs are validated before any request reaches your controllers.
+                // This ensures JWTs are validated before any request reaches your controllers.
         return http.build();
     }
 }

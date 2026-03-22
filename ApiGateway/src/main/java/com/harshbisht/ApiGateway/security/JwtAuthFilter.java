@@ -25,7 +25,6 @@ Flow:
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
 
-    //@Value("${jwt.secret}")
     private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
 
     // The main method that runs for each request.
@@ -62,6 +61,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             // Mutate request with user info
             // sent further to services, with these headers
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
+                    .header("X-Internal-Secret", "gateway-secret-123456789101112131415")
                     .header("X-User-Id", claims.get("userId").toString())
                     .header("X-User-Role", claims.get("role").toString())
                     .build();
@@ -69,6 +69,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
 
         } catch (Exception e) {
+            System.out.println("GATEWAY JWT ERROR: " + e.getMessage());
             exchange.getResponse().setStatusCode(HttpStatus.UNAUTHORIZED);
             return exchange.getResponse().setComplete();
         }

@@ -38,10 +38,7 @@ public class ExamService {
     // Create exam → return DTO
     public ExamResponse createExam(CreateExamRequest request) {
 
-        Long teacherId = (Long) SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getPrincipal();
+        Long teacherId = getCurrentTeacherId();
 
         SubjectEntity subject = subjectRepository
                 .findById(request.getSubjectId())
