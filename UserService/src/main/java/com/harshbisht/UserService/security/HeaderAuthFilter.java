@@ -14,6 +14,19 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.List;
 
+/**
+ * Single filter handling two auth paths:
+ *
+ *   PRIORITY 1 — Gateway forwards user requests:
+ *     Headers: X-Internal-Secret (validated) + X-User-Id + X-User-Role
+ *     → authenticates as the actual user with their role
+ *
+ *   PRIORITY 2 — Internal service-to-service calls (e.g. AuthService creating a user):
+ *     Headers: X-Internal-Secret only (no X-User-Id / X-User-Role)
+ *     → authenticates as "internal-service" with ROLE_SERVICE
+ *
+ *   All other requests (no valid secret) → 403 Forbidden.
+ */
 @Component
 public class HeaderAuthFilter extends OncePerRequestFilter {
 
@@ -27,44 +40,57 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String internalSecret = request.getHeader("X-Internal-Secret");
-        String userId = request.getHeader("X-User-Id");
-        String role = request.getHeader("X-User-Role");
+        String userId         = request.getHeader("X-User-Id");
+        String role           = request.getHeader("X-User-Role");
 
-        // Validate internal secret IF present
-        if (!internalSecretExpected.equals(internalSecret)) {
+        // FIX: Only enforce the secret when it IS present (gateway/service calls).
+        // Requests that arrive without the header at all are rejected here.
+        // Requests that supply a wrong value are also rejected.
+        boolean secretValid = internalSecretExpected.equals(internalSecret);
+
+        if (!secretValid) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
-        // 🟢 PRIORITY 1: USER AUTH (from Gateway)
-        if (userId != null && role != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+        // At this point the shared secret is valid.
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            String formattedRole = role.toUpperCase();
-            formattedRole = formattedRole.startsWith("ROLE_") ? formattedRole : "ROLE_" + formattedRole;
+            // PRIORITY 1: Gateway forwarded a real user → use their identity.
+            if (userId != null && role != null) {
+                String formattedRole = role.toUpperCase();
+                formattedRole = formattedRole.startsWith("ROLE_")
+                        ? formattedRole
+                        : "ROLE_" + formattedRole;
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            userId,
-                            null,
-                            List.of(new SimpleGrantedAuthority(formattedRole))
-                    );
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userId,
+                                null,
+                                List.of(new SimpleGrantedAuthority(formattedRole))
+                        );
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        }
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
-        // 🟡 PRIORITY 2: INTERNAL SERVICE AUTH (only if no user)
-        else if (internalSecret != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+                // FIX: Store parsed userId as a request attribute so downstream
+                // services (UserService.getUser) can read it without touching HTTP headers.
+                try {
+                    request.setAttribute("userId", Long.parseLong(userId));
+                } catch (NumberFormatException ignored) {
+                    // non-numeric userId — leave attribute null, service will handle it
+                }
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            "internal-service",
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
-                    );
+            } else {
+                // PRIORITY 2: Internal service call (no user headers) → ROLE_SERVICE.
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                "internal-service",
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                        );
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
 
         filterChain.doFilter(request, response);

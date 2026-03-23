@@ -2,6 +2,7 @@ package com.harshbisht.AuthService.service;
 
 import com.harshbisht.AuthService.dto.LoginRequest;
 import com.harshbisht.AuthService.dto.RegisterRequest;
+import com.harshbisht.AuthService.dto.UserDto;
 import com.harshbisht.AuthService.dto.UserEntity;
 import com.harshbisht.AuthService.entity.AuthUser;
 import com.harshbisht.AuthService.entity.Role;
@@ -48,11 +49,11 @@ public class AuthService {
 
         try {
             // Create profile in User Service
-            UserEntity profile = new UserEntity();
-            profile.setName(req.getName());
+            UserDto profile = UserDto.builder()
+                    .name(req.getName())
+                    .build();
 
-            UserEntity savedUser =
-                    userFeign.createUser(profile);
+            UserDto savedUser = userFeign.createUser(profile);
 
             // Link userId from user service
             user.setUserId(savedUser.getId());

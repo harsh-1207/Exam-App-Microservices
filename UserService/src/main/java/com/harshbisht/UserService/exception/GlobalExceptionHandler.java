@@ -11,8 +11,9 @@ import java.time.LocalDateTime;
 @ControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponse> handleAccessDenied(AccessDeniedException ex) {
+    // FIX: Updated to use renamed UnauthorizedAccessException (was AccessDeniedException)
+    @ExceptionHandler(UnauthorizedAccessException.class)
+    public ResponseEntity<ErrorResponse> handleAccessDenied(UnauthorizedAccessException ex) {
         return buildResponse(ex.getMessage(), HttpStatus.FORBIDDEN);
     }
 
@@ -22,8 +23,11 @@ public class GlobalExceptionHandler {
     }
 
     private ResponseEntity<ErrorResponse> buildResponse(String message, HttpStatus status) {
-        ErrorResponse error = new ErrorResponse(message, status.value(), LocalDateTime.now());
+        ErrorResponse error = ErrorResponse.builder()
+                .message(message)
+                .status(status.value())
+                .timestamp(LocalDateTime.now())
+                .build();
         return new ResponseEntity<>(error, status);
     }
 }
-
