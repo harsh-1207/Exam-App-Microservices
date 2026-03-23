@@ -29,8 +29,8 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
         String userId = request.getHeader("X-User-Id");
         String role = request.getHeader("X-User-Role");
 
-        // 🔴 Validate internal secret IF present
-        if (internalSecret != null && !internalSecretExpected.equals(internalSecret)) {
+        // Validate internal secret IF present
+        if (!internalSecretExpected.equals(internalSecret)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }

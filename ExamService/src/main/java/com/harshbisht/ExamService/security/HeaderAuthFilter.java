@@ -24,12 +24,14 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
+        // Read headers:
         String internalSecret = request.getHeader("X-Internal-Secret");
         String userId = request.getHeader("X-User-Id");
+        Long userIdLong = Long.valueOf(userId);
         String role = request.getHeader("X-User-Role");
 
-        // 🔴 Validate internal secret IF present
-        if (internalSecret != null && !internalSecretExpected.equals(internalSecret)) {
+        // Validate internal secret IF present
+        if (!internalSecretExpected.equals(internalSecret)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
@@ -43,7 +45,7 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
 
             UsernamePasswordAuthenticationToken auth =
                     new UsernamePasswordAuthenticationToken(
-                            userId,
+                            userIdLong,
                             null,
                             List.of(new SimpleGrantedAuthority(formattedRole))
                     );
@@ -51,7 +53,7 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(auth);
         }
 
-        // 🟡 PRIORITY 2: INTERNAL SERVICE AUTH (only if no user)
+        // PRIORITY 2: INTERNAL SERVICE AUTH (only if no user)
         else if (internalSecret != null &&
                 SecurityContextHolder.getContext().getAuthentication() == null) {
 

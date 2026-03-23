@@ -34,13 +34,6 @@ public class SecurityConfig {
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-
-//        http.csrf(csrf -> csrf.disable());
-//
-//        http.sessionManagement(session ->
-//                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-//        );
-
         http
                 .csrf(csrf -> csrf.disable())
                 .sessionManagement(sess ->
@@ -48,18 +41,17 @@ public class SecurityConfig {
                 )
                 .authorizeHttpRequests(auth -> auth
 
-                        // ONLY AUTH SERVICE (SERVICE TOKEN) CAN CREATE USER
+                        // INTERNAL CALLS ONLY
                         .requestMatchers(HttpMethod.POST, "/users")
-                        .hasRole("SERVICE")
+                        .permitAll()
 
-                        // Normal users can view
+                        // USER ACCESS
                         .requestMatchers(HttpMethod.GET, "/users/**")
                         .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 
                         .anyRequest().authenticated()
                 );
         http.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
-//                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

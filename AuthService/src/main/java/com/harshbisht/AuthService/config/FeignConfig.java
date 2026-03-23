@@ -4,6 +4,13 @@ import feign.RequestInterceptor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+// Automatically attach INTERNAL SECRET to every Feign request
+// used for Service to Service calls
+/*
+We use a Feign RequestInterceptor to automatically attach an internal
+shared secret header to all service-to-service calls. Downstream services
+validate this secret and assign a SERVICE role, allowing secure internal communication.
+*/
 @Configuration
 public class FeignConfig {
 

@@ -16,18 +16,22 @@ A global filter that intercepts every request passing through the gateway.
 GlobalFilter: Runs for every request through the gateway.
 Ordered: Lets you control execution order. Returning -1 means it runs early in the filter chain.
 
-Flow:
-    User logs in via /auth/login → gets JWT.
-    User calls /student/home with Authorization: Bearer <token>.
-    Gateway validates token, extracts userId and role, adds them as headers.
-    WebService/StudentService receives request with extra headers → can use them for personalization or role checks.
+JWT is validated ONLY here
+Everything else (UserService, ExamService) just trusts this layer
+
+Client → Gateway (this filter)
+       → JWT validated
+       → headers injected
+       → forwarded to services
  */
 @Component
 public class JwtAuthFilter implements GlobalFilter, Ordered {
+    // GlobalFilter -> runs for every request through gateway
+    // Ordered → controls when it runs
 
     private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
 
-    // The main method that runs for each request.
+    // The main method that runs for EACH request.
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
 
@@ -38,7 +42,9 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
             return chain.filter(exchange);
         }
 
-        String authHeader = exchange.getRequest().getHeaders().getFirst(HttpHeaders.AUTHORIZATION);
+        String authHeader = exchange.getRequest()
+                .getHeaders()
+                .getFirst(HttpHeaders.AUTHORIZATION);
 
         // Check Authorization header
         // If missing or not starting with Bearer, return 401 Unauthorized

@@ -1,7 +1,6 @@
 package com.harshbisht.ExamService.config;
 
 import com.harshbisht.ExamService.security.HeaderAuthFilter;
-//import com.harshbisht.ExamService.security.JwtFilter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,8 +15,12 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-
-//    private final JwtFilter jwtFilter;
+    /*
+    This is the custom authentication filter
+    It reads:
+        X-User-Id, X-User-Role, X-Internal-Secret
+    ExamService does NOT validate JWT anymore → Gateway already did it
+    */
     private final HeaderAuthFilter headerAuthFilter;
 
     @Bean
@@ -25,6 +28,8 @@ public class SecurityConfig {
 
         http.csrf(csrf -> csrf.disable());
 
+        // No sessions stored on server
+        // Each request must carry authentication
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
@@ -46,7 +51,6 @@ public class SecurityConfig {
                 .anyRequest().authenticated()
         );
 
-//        http.addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
         http.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
