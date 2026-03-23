@@ -1,6 +1,7 @@
 package com.harshbisht.AuthService.config;
 
 import feign.RequestInterceptor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -14,7 +15,8 @@ validate this secret and assign a SERVICE role, allowing secure internal communi
 @Configuration
 public class FeignConfig {
 
-    private String internalSecret = "gateway-secret-123456789101112131415";
+    @Value("${internal.secret}")
+    private String internalSecret;
 
     @Bean
     public RequestInterceptor requestInterceptor() {

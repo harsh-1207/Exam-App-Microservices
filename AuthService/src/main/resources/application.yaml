@@ -17,3 +17,9 @@ eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+
+jwt:
+  secret: supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd
+
+internal:
+  secret: gateway-secret-123456789101112131415

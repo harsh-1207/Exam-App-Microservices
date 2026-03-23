@@ -2,6 +2,7 @@ package com.harshbisht.ApiGateway.security;
 
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
@@ -29,7 +30,12 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     // GlobalFilter -> runs for every request through gateway
     // Ordered → controls when it runs
 
-    private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
+//    private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
+    @Value("${jwt.secret}")
+    private String secret;
+
+    @Value("${internal.secret}")
+    private String internalSecret;
 
     // The main method that runs for EACH request.
     @Override

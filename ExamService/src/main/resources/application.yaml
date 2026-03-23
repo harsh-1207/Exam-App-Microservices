@@ -19,3 +19,6 @@ eureka:
       defaultZone: http://localhost:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
+
+internal:
+  secret: gateway-secret-123456789101112131415

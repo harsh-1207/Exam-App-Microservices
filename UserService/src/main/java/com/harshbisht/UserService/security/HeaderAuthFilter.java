@@ -17,7 +17,8 @@ import java.util.List;
 @Component
 public class HeaderAuthFilter extends OncePerRequestFilter {
 
-    private String internalSecretExpected = "gateway-secret-123456789101112131415";
+    @Value("${internal.secret}")
+    private String internalSecretExpected;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
