@@ -15,36 +15,31 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @EnableWebSecurity
 @RequiredArgsConstructor
 public class SecurityConfig {
-    /*
-    This is the custom authentication filter
-    It reads:
-        X-User-Id, X-User-Role, X-Internal-Secret
-    ExamService does NOT validate JWT anymore → Gateway already did it
-    */
+
     private final HeaderAuthFilter headerAuthFilter;
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
         http.csrf(csrf -> csrf.disable());
-
-        // No sessions stored on server
-        // Each request must carry authentication
         http.sessionManagement(session ->
                 session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
         );
 
         http.authorizeHttpRequests(auth -> auth
 
-                // Only TEACHER can create, edit and delete exams/subjects/questions
-                .requestMatchers(HttpMethod.POST, "/subjects/**", "/exams/**", "/questions/**")
-                .hasAnyRole("TEACHER")
-                .requestMatchers(HttpMethod.PUT, "/subjects/**", "/exams/**", "/questions/**")
-                .hasAnyRole("TEACHER")
-                .requestMatchers(HttpMethod.DELETE, "/subjects/**", "/exams/**", "/questions/**")
-                .hasAnyRole("TEACHER")
+                // Only TEACHER can create, edit, delete
+                .requestMatchers(HttpMethod.POST,   "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.PUT,    "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
+                .requestMatchers(HttpMethod.DELETE, "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
 
-                // Students can view exams
+                // FIX: GET /exams/{id}/attempt was covered by the broad GET /exams/** rule
+                // which already permits STUDENT. However, making it explicit here documents
+                // intent clearly and ensures it stays correct if rules are reordered.
+                // Students should only reach published exams — enforced in ExamService, not here.
+                .requestMatchers(HttpMethod.GET, "/exams/*/attempt").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+
+                // All authenticated roles can read
                 .requestMatchers(HttpMethod.GET, "/subjects/**", "/exams/**", "/questions/**")
                 .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
 

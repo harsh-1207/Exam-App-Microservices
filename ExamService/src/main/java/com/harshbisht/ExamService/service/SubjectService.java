@@ -3,6 +3,8 @@ package com.harshbisht.ExamService.service;
 import com.harshbisht.ExamService.dto.SubjectDTO.CreateSubjectRequest;
 import com.harshbisht.ExamService.dto.SubjectDTO.SubjectResponse;
 import com.harshbisht.ExamService.entity.SubjectEntity;
+import com.harshbisht.ExamService.exception.InvalidRequestException;
+import com.harshbisht.ExamService.exception.ResourceNotFoundException;
 import com.harshbisht.ExamService.repository.SubjectRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -16,61 +18,62 @@ public class SubjectService {
     private final SubjectRepository subjectRepository;
 
     public List<SubjectResponse> getAllSubjects() {
-        return subjectRepository.findAll()
-                .stream()
+        return subjectRepository.findAll().stream()
                 .map(this::mapToDTO)
                 .toList();
     }
 
     public SubjectResponse createSubject(CreateSubjectRequest request) {
-
         if (request.getName() == null || request.getName().isBlank()) {
-            throw new RuntimeException("Subject name cannot be empty");
+            throw new InvalidRequestException("Subject name cannot be empty");
         }
 
-        String currSubject = request.getName().trim();
+        String name = request.getName().trim();
 
-        if (subjectRepository.existsByNameIgnoreCase(currSubject)) {
-            throw new RuntimeException("Subject Already Exists");
+        if (subjectRepository.existsByNameIgnoreCase(name)) {
+            throw new InvalidRequestException("Subject already exists");
         }
 
         SubjectEntity subject = new SubjectEntity();
-        subject.setName(currSubject);
-
+        subject.setName(name);
         return mapToDTO(subjectRepository.save(subject));
     }
 
     public SubjectResponse editSubject(Long subjectId, CreateSubjectRequest request) {
-
         if (request.getName() == null || request.getName().isBlank()) {
-            throw new RuntimeException("Subject name cannot be empty");
+            throw new InvalidRequestException("Subject name cannot be empty");
         }
 
-        String currSubject = request.getName().trim();
+        String name = request.getName().trim();
 
         SubjectEntity subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject Not Found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
-        if (subjectRepository.existsByNameIgnoreCase(currSubject)
-                && !subject.getName().equalsIgnoreCase(currSubject)) {
-            throw new RuntimeException("Subject name already exists");
+        if (subjectRepository.existsByNameIgnoreCase(name)
+                && !subject.getName().equalsIgnoreCase(name)) {
+            throw new InvalidRequestException("Subject name already exists");
         }
 
-        subject.setName(currSubject);
-
+        subject.setName(name);
         return mapToDTO(subjectRepository.save(subject));
     }
 
     public void deleteSubject(Long subjectId) {
-
         SubjectEntity subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         if (!subject.getExams().isEmpty()) {
-            throw new RuntimeException("Cannot delete subject with exams");
+            throw new InvalidRequestException("Cannot delete a subject that has exams");
         }
 
         subjectRepository.delete(subject);
+    }
+
+    public SubjectResponse getSubject(Long subjectId) {
+        return mapToDTO(
+                subjectRepository.findById(subjectId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Subject not found"))
+        );
     }
 
     private SubjectResponse mapToDTO(SubjectEntity subject) {
@@ -79,11 +82,4 @@ public class SubjectService {
                 .name(subject.getName())
                 .build();
     }
-
-    public SubjectResponse getSubject(Long subjectId) {
-        SubjectEntity subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
-        return new SubjectResponse(subject.getId(), subject.getName());
-    }
-
 }

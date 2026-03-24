@@ -7,12 +7,16 @@ import com.harshbisht.ExamService.entity.ExamEntity;
 import com.harshbisht.ExamService.entity.OptionEntity;
 import com.harshbisht.ExamService.entity.QuestionEntity;
 import com.harshbisht.ExamService.entity.SubjectEntity;
+import com.harshbisht.ExamService.exception.AccessDeniedException;
+import com.harshbisht.ExamService.exception.InvalidRequestException;
+import com.harshbisht.ExamService.exception.ResourceNotFoundException;
 import com.harshbisht.ExamService.repository.ExamRepository;
 import com.harshbisht.ExamService.repository.SubjectRepository;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional; // FIX: spring, not jakarta
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,25 +28,33 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final SubjectRepository subjectRepository;
 
-    // Helper: Get Current Teacher
-    private Long getCurrentTeacherId() {
-        return Long.parseLong(
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication()
-                        .getPrincipal()
-                        .toString()
-        );
+    /**
+     * FIX: The old version called Long.parseLong(principal.toString()).
+     * The principal stored in HeaderAuthFilter is already a Long — toString() then
+     * parseLong() is a round-trip that throws if the principal is ever not a plain
+     * numeric string (e.g. "internal-service" for ROLE_SERVICE callers).
+     * Cast directly instead.
+     */
+    private Long getCurrentUserId() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        Object principal = auth.getPrincipal();
+        if (principal instanceof Long) {
+            return (Long) principal;
+        }
+        throw new AccessDeniedException("Cannot resolve user identity from token");
     }
 
-    // Create exam → return DTO
+    private void assertOwnership(ExamEntity exam) {
+        if (!exam.getTeacherId().equals(getCurrentUserId())) {
+            throw new AccessDeniedException("You are not allowed to modify this exam");
+        }
+    }
+
     public ExamResponse createExam(CreateExamRequest request) {
+        Long teacherId = getCurrentUserId();
 
-        Long teacherId = getCurrentTeacherId();
-
-        SubjectEntity subject = subjectRepository
-                .findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+        SubjectEntity subject = subjectRepository.findById(request.getSubjectId())
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         ExamEntity exam = new ExamEntity();
         exam.setTitle(request.getTitle());
@@ -50,158 +62,76 @@ public class ExamService {
         exam.setTeacherId(teacherId);
         exam.setPublished(false);
 
-        examRepository.save(exam);
-
-        return toResponse(exam);
+        return toResponse(examRepository.save(exam));
     }
 
-    // Delete exam
     public void deleteExam(Long examId) {
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        Long currentTeacherId = getCurrentTeacherId();
-
-        if (!exam.getTeacherId().equals(currentTeacherId)) {
-            throw new RuntimeException("You are not allowed to modify this exam");
-        }
+        assertOwnership(exam);
 
         if (exam.isPublished()) {
-            throw new RuntimeException("Cannot delete a published exam");
+            throw new InvalidRequestException("Cannot delete a published exam. Unpublish it first.");
         }
+
         examRepository.delete(exam);
     }
 
-    // Publish exam → return DTO
     public ExamResponse publishExam(Long examId) {
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        Long currentTeacherId = getCurrentTeacherId();
-
-        if (!exam.getTeacherId().equals(currentTeacherId)) {
-            throw new RuntimeException("You are not allowed to modify this exam");
-        }
+        assertOwnership(exam);
 
         exam.setPublished(true);
-        ExamEntity saved = examRepository.save(exam);
-        return toResponse(saved);
+        return toResponse(examRepository.save(exam));
     }
 
-    // un publish exam
     public ExamResponse unPublishExam(Long examId) {
-
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam doesn't exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        Long currentTeacherId = getCurrentTeacherId();
-
-        if (!exam.getTeacherId().equals(currentTeacherId)) {
-            throw new RuntimeException("You are not allowed to modify this exam");
-        }
+        assertOwnership(exam);
 
         exam.setPublished(false);
-        examRepository.save(exam);
-
-        return toResponse(exam);
+        return toResponse(examRepository.save(exam));
     }
 
-    // Edit exam fully → return DTO
+    // FIX: Use spring @Transactional, not jakarta. The jakarta annotation is not
+    // recognised by Spring's transaction proxy — the transaction is never started,
+    // so Hibernate flushes silently outside a managed context and dirty-checking
+    // behaviour becomes unpredictable.
     @Transactional
     public ExamResponse editExam(Long examId, EditExamRequest request) {
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        Long currentTeacherId = getCurrentTeacherId();
-
-        if (!exam.getTeacherId().equals(currentTeacherId)) {
-            throw new RuntimeException("You are not allowed to modify this exam");
-        }
+        assertOwnership(exam);
 
         if (exam.isPublished()) {
-            throw new RuntimeException("Cannot edit published exam");
+            throw new InvalidRequestException("Cannot edit a published exam. Unpublish it first.");
         }
 
         SubjectEntity subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new RuntimeException("Subject not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         exam.setTitle(request.getTitle());
         exam.setSubject(subject);
 
-        syncQuestions(exam, request.getQuestions());
-
-        ExamEntity saved = examRepository.save(exam);
-        return toResponse(saved);
-    }
-
-    // Mapper: Entity → DTO
-    private ExamResponse toResponse(ExamEntity entity) {
-        return new ExamResponse(entity.getId(), entity.getTitle(), entity.isPublished());
-    }
-
-    // Sync questions
-    private void syncQuestions(ExamEntity exam, List<QuestionEditRequest> questionRequests) {
-        Map<Long, QuestionEntity> existingQuestions = exam.getQuestions()
-                .stream()
-                .collect(Collectors.toMap(QuestionEntity::getId, q -> q));
-
-        List<QuestionEntity> updatedQuestions = new ArrayList<>();
-
-        for (QuestionEditRequest req : questionRequests) {
-            QuestionEntity question;
-            if (req.getId() != null && existingQuestions.containsKey(req.getId())) {
-                question = existingQuestions.get(req.getId());
-                question.setQuestionText(req.getQuestionText());
-            } else {
-                question = new QuestionEntity();
-                question.setExam(exam);
-                question.setQuestionText(req.getQuestionText());
-            }
-            syncOptions(question, req.getOptions());
-            updatedQuestions.add(question);
+        if (request.getQuestions() != null) {
+            syncQuestions(exam, request.getQuestions());
         }
 
-        exam.getQuestions().clear();
-        exam.getQuestions().addAll(updatedQuestions);
+        return toResponse(examRepository.save(exam));
     }
 
-    // Sync options
-    private void syncOptions(QuestionEntity question, List<OptionEditRequest> optionRequests) {
-        Map<Long, OptionEntity> existingOptions = question.getOptions()
-                .stream()
-                .collect(Collectors.toMap(OptionEntity::getId, o -> o));
-
-        List<OptionEntity> updatedOptions = new ArrayList<>();
-
-        for (OptionEditRequest req : optionRequests) {
-            OptionEntity option;
-            if (req.getId() != null && existingOptions.containsKey(req.getId())) {
-                option = existingOptions.get(req.getId());
-                option.setText(req.getText());
-                option.setCorrect(req.isCorrect());
-            } else {
-                option = new OptionEntity();
-                option.setQuestion(question);
-                option.setText(req.getText());
-                option.setCorrect(req.isCorrect());
-            }
-            updatedOptions.add(option);
-        }
-
-        question.getOptions().clear();
-        question.getOptions().addAll(updatedOptions);
-    }
-
-    // create another similar exam
+    @Transactional
     public ExamResponse duplicateExam(Long examId) {
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam Doesn't exist"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        Long currentTeacherId = getCurrentTeacherId();
-
-        if (!exam.getTeacherId().equals(currentTeacherId)) {
-            throw new RuntimeException("You are not allowed to duplicate this exam");
-        }
+        assertOwnership(exam);
 
         ExamEntity copy = new ExamEntity();
         copy.setTitle(exam.getTitle() + " (Copy)");
@@ -209,17 +139,13 @@ public class ExamService {
         copy.setSubject(exam.getSubject());
         copy.setTeacherId(exam.getTeacherId());
 
-        // Deep copy the questions and options
-
-        List<QuestionEntity> newQuestions = exam.getQuestions()
-                .stream()
+        List<QuestionEntity> newQuestions = exam.getQuestions().stream()
                 .map(q -> {
                     QuestionEntity newQ = new QuestionEntity();
                     newQ.setQuestionText(q.getQuestionText());
                     newQ.setExam(copy);
 
-                    List<OptionEntity> newOptions = q.getOptions()
-                            .stream()
+                    List<OptionEntity> newOptions = q.getOptions().stream()
                             .map(o -> {
                                 OptionEntity newO = new OptionEntity();
                                 newO.setText(o.getText());
@@ -235,84 +161,64 @@ public class ExamService {
                 .toList();
 
         copy.setQuestions(newQuestions);
-
-        examRepository.save(copy);
-
-        return toResponse(copy);
+        return toResponse(examRepository.save(copy));
     }
 
-    // Get teacher's exam
     public List<ExamResponse> getMyExams() {
-
-        Long teacherId = getCurrentTeacherId();
-
-        return examRepository.findByTeacherId(teacherId)
+        return examRepository.findByTeacherId(getCurrentUserId())
                 .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    // Get exams (By published, By Subject, By both, By neither)
     public List<ExamResponse> getExams(Long subjectId, Boolean published) {
-
         List<ExamEntity> exams;
 
         if (subjectId != null && published != null) {
-            // Published exams by subject
             exams = examRepository.findBySubject_IdAndPublished(subjectId, published);
-
         } else if (subjectId != null) {
-            // All exams by subject
             exams = examRepository.findBySubject_Id(subjectId);
-
         } else if (published != null) {
-            // All published exams
             exams = examRepository.findByPublished(published);
-
         } else {
-            // All exams
             exams = examRepository.findAll();
         }
 
-        return exams.stream()
-                .map(this::toResponse)
-                .toList();
+        return exams.stream().map(this::toResponse).toList();
     }
 
-    // Get particular exam
     public ExamResponse getExamById(Long examId) {
-        ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam doesn't exist!"));
-
-        return toResponse(exam);
+        return toResponse(
+                examRepository.findById(examId)
+                        .orElseThrow(() -> new ResourceNotFoundException("Exam not found"))
+        );
     }
 
-    // Exam to attempt (No details of correct options)
     public ExamAttemptResponse getExamForAttempt(Long examId) {
-
         ExamEntity exam = examRepository.findById(examId)
-                .orElseThrow(() -> new RuntimeException("Exam not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
         if (!exam.isPublished()) {
-            throw new RuntimeException("Exam not published yet");
+            throw new AccessDeniedException("Exam is not published yet");
         }
 
-        List<QuestionAttemptResponse> questionResponses =
-                exam.getQuestions().stream()
-                        .map(question -> QuestionAttemptResponse.builder()
-                                .id(question.getId())
-                                .questionText(question.getQuestionText())
-                                .options(
-                                        question.getOptions().stream()
-                                                .map(option -> OptionAttemptResponse.builder()
-                                                        .id(option.getId())
-                                                        .text(option.getText())
-                                                        .build())
-                                                .toList()
-                                )
-                                .build()
+        List<QuestionAttemptResponse> questionResponses = exam.getQuestions().stream()
+                .map(question -> QuestionAttemptResponse.builder()
+                        .id(question.getId())
+                        .questionText(question.getQuestionText())
+                        .options(
+                                question.getOptions().stream()
+                                        .map(option -> OptionAttemptResponse.builder()
+                                                .id(option.getId())
+                                                .text(option.getText())
+                                                // NOTE: isCorrect is intentionally omitted here
+                                                // — OptionAttemptResponse does not have that field.
+                                                .build())
+                                        .toList()
                         )
-                        .toList();
+                        .build()
+                )
+                .toList();
 
         return ExamAttemptResponse.builder()
                 .id(exam.getId())
@@ -321,4 +227,56 @@ public class ExamService {
                 .build();
     }
 
+    private ExamResponse toResponse(ExamEntity entity) {
+        return new ExamResponse(entity.getId(), entity.getTitle(), entity.isPublished());
+    }
+
+    private void syncQuestions(ExamEntity exam, List<QuestionEditRequest> questionRequests) {
+        Map<Long, QuestionEntity> existingMap = exam.getQuestions().stream()
+                .collect(Collectors.toMap(QuestionEntity::getId, q -> q));
+
+        List<QuestionEntity> updated = new ArrayList<>();
+
+        for (QuestionEditRequest req : questionRequests) {
+            QuestionEntity question;
+            if (req.getId() != null && existingMap.containsKey(req.getId())) {
+                question = existingMap.get(req.getId());
+                question.setQuestionText(req.getQuestionText());
+            } else {
+                question = new QuestionEntity();
+                question.setExam(exam);
+                question.setQuestionText(req.getQuestionText());
+            }
+            syncOptions(question, req.getOptions());
+            updated.add(question);
+        }
+
+        exam.getQuestions().clear();
+        exam.getQuestions().addAll(updated);
+    }
+
+    private void syncOptions(QuestionEntity question, List<OptionEditRequest> optionRequests) {
+        Map<Long, OptionEntity> existingMap = question.getOptions().stream()
+                .collect(Collectors.toMap(OptionEntity::getId, o -> o));
+
+        List<OptionEntity> updated = new ArrayList<>();
+
+        for (OptionEditRequest req : optionRequests) {
+            OptionEntity option;
+            if (req.getId() != null && existingMap.containsKey(req.getId())) {
+                option = existingMap.get(req.getId());
+                option.setText(req.getText());
+                option.setCorrect(req.isCorrect());
+            } else {
+                option = new OptionEntity();
+                option.setQuestion(question);
+                option.setText(req.getText());
+                option.setCorrect(req.isCorrect());
+            }
+            updated.add(option);
+        }
+
+        question.getOptions().clear();
+        question.getOptions().addAll(updated);
+    }
 }

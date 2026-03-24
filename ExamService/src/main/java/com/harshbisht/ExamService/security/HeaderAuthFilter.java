@@ -26,47 +26,64 @@ public class HeaderAuthFilter extends OncePerRequestFilter {
                                     FilterChain filterChain)
             throws ServletException, IOException {
 
-        // Read headers:
         String internalSecret = request.getHeader("X-Internal-Secret");
-        String userId = request.getHeader("X-User-Id");
-        Long userIdLong = Long.valueOf(userId);
-        String role = request.getHeader("X-User-Role");
+        String userId         = request.getHeader("X-User-Id");
+        String role           = request.getHeader("X-User-Role");
 
-        // Validate internal secret IF present
+        // FIX 1: The old code called Long.valueOf(userId) BEFORE the secret check
+        // and BEFORE the null check on userId. If X-User-Id is absent (e.g. an
+        // internal service call), Long.valueOf(null) throws a NullPointerException
+        // immediately — the request dies before reaching the 403 branch.
+        // Solution: validate the secret first, then parse userId only when it's present.
+
         if (!internalSecretExpected.equals(internalSecret)) {
             response.setStatus(HttpServletResponse.SC_FORBIDDEN);
             return;
         }
 
-        // 🟢 PRIORITY 1: USER AUTH (from Gateway)
-        if (userId != null && role != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+        if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            String formattedRole = role.toUpperCase();
-            formattedRole = formattedRole.startsWith("ROLE_") ? formattedRole : "ROLE_" + formattedRole;
+            // PRIORITY 1: Gateway-forwarded user request (has userId + role)
+            if (userId != null && role != null) {
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            userIdLong,
-                            null,
-                            List.of(new SimpleGrantedAuthority(formattedRole))
-                    );
+                // FIX 2: Parse userId here, after null-safety is confirmed.
+                // Wrap in try-catch so a malformed header returns 400 rather than a 500 NPE.
+                Long userIdLong;
+                try {
+                    userIdLong = Long.parseLong(userId);
+                } catch (NumberFormatException e) {
+                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    return;
+                }
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
-        }
+                String formattedRole = role.toUpperCase();
+                formattedRole = formattedRole.startsWith("ROLE_") ? formattedRole : "ROLE_" + formattedRole;
 
-        // PRIORITY 2: INTERNAL SERVICE AUTH (only if no user)
-        else if (internalSecret != null &&
-                SecurityContextHolder.getContext().getAuthentication() == null) {
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                userIdLong,
+                                null,
+                                List.of(new SimpleGrantedAuthority(formattedRole))
+                        );
 
-            UsernamePasswordAuthenticationToken auth =
-                    new UsernamePasswordAuthenticationToken(
-                            "internal-service",
-                            null,
-                            List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
-                    );
+                SecurityContextHolder.getContext().setAuthentication(auth);
 
-            SecurityContextHolder.getContext().setAuthentication(auth);
+                // FIX 3: Store parsed userId as a request attribute.
+                // Services can read req.getAttribute("userId") instead of calling
+                // Long.parseLong(principal.toString()), which is fragile if the
+                // principal type ever changes.
+                request.setAttribute("userId", userIdLong);
+
+            } else {
+                // PRIORITY 2: Internal service call (secret present, no user headers)
+                UsernamePasswordAuthenticationToken auth =
+                        new UsernamePasswordAuthenticationToken(
+                                "internal-service",
+                                null,
+                                List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                        );
+                SecurityContextHolder.getContext().setAuthentication(auth);
+            }
         }
 
         filterChain.doFilter(request, response);
