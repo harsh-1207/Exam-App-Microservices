@@ -6,6 +6,10 @@ spring:
     name: SERVICE-REGISTRY
 
 eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
   client:
     register-with-eureka: false
     fetch-registry: false

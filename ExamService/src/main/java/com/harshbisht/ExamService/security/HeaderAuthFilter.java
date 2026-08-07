@@ -12,80 +12,155 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
+import java.util.Set;
 
 @Component
 public class HeaderAuthFilter extends OncePerRequestFilter {
+
+    private static final Set<String> ALLOWED_ROLES = Set.of(
+            "STUDENT",
+            "TEACHER",
+            "ADMIN"
+    );
 
     @Value("${internal.secret}")
     private String internalSecretExpected;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String internalSecret = request.getHeader("X-Internal-Secret");
-        String userId         = request.getHeader("X-User-Id");
-        String role           = request.getHeader("X-User-Role");
+        String userId = request.getHeader("X-User-Id");
+        String role = request.getHeader("X-User-Role");
 
-        // FIX 1: The old code called Long.valueOf(userId) BEFORE the secret check
-        // and BEFORE the null check on userId. If X-User-Id is absent (e.g. an
-        // internal service call), Long.valueOf(null) throws a NullPointerException
-        // immediately — the request dies before reaching the 403 branch.
-        // Solution: validate the secret first, then parse userId only when it's present.
+        /*
+         * Every request reaching ExamService must come from a trusted
+         * internal caller.
+         */
+        if (!isValidSecret(internalSecret)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Forbidden"
+            );
+            return;
+        }
 
-        if (!internalSecretExpected.equals(internalSecret)) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        /*
+         * User identity headers must appear together.
+         *
+         * Valid:
+         *   X-User-Id + X-User-Role
+         *
+         * Valid internal service call:
+         *   neither header
+         *
+         * Invalid:
+         *   only one of them
+         */
+        if ((userId == null) != (role == null)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Invalid authentication headers"
+            );
             return;
         }
 
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // PRIORITY 1: Gateway-forwarded user request (has userId + role)
-            if (userId != null && role != null) {
+            /*
+             * Request forwarded by ApiGateway.
+             */
+            if (userId != null) {
 
-                // FIX 2: Parse userId here, after null-safety is confirmed.
-                // Wrap in try-catch so a malformed header returns 400 rather than a 500 NPE.
-                Long userIdLong;
+                Long parsedUserId;
+
                 try {
-                    userIdLong = Long.parseLong(userId);
-                } catch (NumberFormatException e) {
-                    response.setStatus(HttpServletResponse.SC_BAD_REQUEST);
+                    parsedUserId = Long.parseLong(userId);
+                } catch (NumberFormatException ex) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user identity"
+                    );
                     return;
                 }
 
-                String formattedRole = role.toUpperCase();
-                formattedRole = formattedRole.startsWith("ROLE_") ? formattedRole : "ROLE_" + formattedRole;
+                if (parsedUserId <= 0) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user identity"
+                    );
+                    return;
+                }
 
-                UsernamePasswordAuthenticationToken auth =
+                String normalizedRole = role.trim().toUpperCase();
+
+                /*
+                 * Never allow an arbitrary value to become a Spring role.
+                 */
+                if (!ALLOWED_ROLES.contains(normalizedRole)) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user role"
+                    );
+                    return;
+                }
+
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
-                                userIdLong,
+                                parsedUserId,
                                 null,
-                                List.of(new SimpleGrantedAuthority(formattedRole))
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + normalizedRole
+                                        )
+                                )
                         );
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
 
-                // FIX 3: Store parsed userId as a request attribute.
-                // Services can read req.getAttribute("userId") instead of calling
-                // Long.parseLong(principal.toString()), which is fragile if the
-                // principal type ever changes.
-                request.setAttribute("userId", userIdLong);
+                request.setAttribute("userId", parsedUserId);
 
             } else {
-                // PRIORITY 2: Internal service call (secret present, no user headers)
-                UsernamePasswordAuthenticationToken auth =
+
+                /*
+                 * Internal service-to-service request.
+                 */
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 "internal-service",
                                 null,
-                                List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                List.of(
+                                        new SimpleGrantedAuthority("ROLE_SERVICE")
+                                )
                         );
-                SecurityContextHolder.getContext().setAuthentication(auth);
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isValidSecret(String providedSecret) {
+
+        if (providedSecret == null || internalSecretExpected == null) {
+            return false;
+        }
+
+        return MessageDigest.isEqual(
+                internalSecretExpected.getBytes(StandardCharsets.UTF_8),
+                providedSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 }

@@ -21,32 +21,122 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
 
-        http.csrf(csrf -> csrf.disable());
-        http.sessionManagement(session ->
-                session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)
-        );
+        http
+                .csrf(csrf -> csrf.disable())
 
-        http.authorizeHttpRequests(auth -> auth
+                .sessionManagement(session ->
+                        session.sessionCreationPolicy(
+                                SessionCreationPolicy.STATELESS
+                        )
+                )
 
-                // Only TEACHER can create, edit, delete
-                .requestMatchers(HttpMethod.POST,   "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
-                .requestMatchers(HttpMethod.PUT,    "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
-                .requestMatchers(HttpMethod.DELETE, "/subjects/**", "/exams/**", "/questions/**").hasRole("TEACHER")
+                .authorizeHttpRequests(auth -> auth
 
-                // FIX: GET /exams/{id}/attempt was covered by the broad GET /exams/** rule
-                // which already permits STUDENT. However, making it explicit here documents
-                // intent clearly and ensures it stays correct if rules are reordered.
-                // Students should only reach published exams — enforced in ExamService, not here.
-                .requestMatchers(HttpMethod.GET, "/exams/*/attempt").hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                        /*
+                         * TEACHER exam-management APIs.
+                         */
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/exams/**",
+                                "/questions/**"
+                        ).hasRole("TEACHER")
 
-                // All authenticated roles can read
-                .requestMatchers(HttpMethod.GET, "/subjects/**", "/exams/**", "/questions/**")
-                .hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/exams/**",
+                                "/questions/**"
+                        ).hasRole("TEACHER")
 
-                .anyRequest().authenticated()
-        );
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/exams/**",
+                                "/questions/**"
+                        ).hasRole("TEACHER")
 
-        http.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                        /*
+                         * Subject management.
+                         *
+                         * Existing controller documentation says
+                         * TEACHER / ADMIN.
+                         */
+                        .requestMatchers(
+                                HttpMethod.POST,
+                                "/subjects/**"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.PUT,
+                                "/subjects/**"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+
+                        .requestMatchers(
+                                HttpMethod.DELETE,
+                                "/subjects/**"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+
+                        /*
+                         * Teacher's own exams.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/exams/my"
+                        ).hasRole("TEACHER")
+
+                        /*
+                         * Students use this endpoint to start an exam.
+                         * Teachers/Admins should not use the student attempt API.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/exams/*/attempt"
+                        ).hasRole("STUDENT")
+
+                        /*
+                         * Questions contain the correct-answer flag.
+                         * Therefore students MUST NOT access these endpoints.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/exams/*/questions",
+                                "/exams/*/questions/*"
+                        ).hasAnyRole("TEACHER", "ADMIN")
+
+                        /*
+                         * Normal exam/subject reads.
+                         */
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/subjects/**"
+                        ).hasAnyRole(
+                                "STUDENT",
+                                "TEACHER",
+                                "ADMIN"
+                        )
+
+                        .requestMatchers(
+                                HttpMethod.GET,
+                                "/exams/**"
+                        ).hasAnyRole(
+                                "STUDENT",
+                                "TEACHER",
+                                "ADMIN"
+                        )
+
+                        /*
+                         * Everything else is denied.
+                         *
+                         * This is important because ROLE_SERVICE should not
+                         * automatically receive access to future endpoints.
+                         */
+                        .anyRequest()
+                        .denyAll()
+                )
+
+                .addFilterBefore(
+                        headerAuthFilter,
+                        UsernamePasswordAuthenticationFilter.class
+                );
+
         return http.build();
     }
 }

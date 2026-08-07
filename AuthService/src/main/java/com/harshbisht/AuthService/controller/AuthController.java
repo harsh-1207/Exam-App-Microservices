@@ -4,6 +4,7 @@ import com.harshbisht.AuthService.dto.AuthResponse;
 import com.harshbisht.AuthService.dto.LoginRequest;
 import com.harshbisht.AuthService.dto.RegisterRequest;
 import com.harshbisht.AuthService.service.AuthService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -18,13 +19,13 @@ public class AuthController {
 
     @PostMapping("/register")
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<String> register(@RequestBody RegisterRequest req) {
+    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest req) {
         authService.register(req);
         return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
     }
 
     @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest req) {
+    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
         String token = authService.login(req);
         return ResponseEntity.ok(new AuthResponse(token));
     }

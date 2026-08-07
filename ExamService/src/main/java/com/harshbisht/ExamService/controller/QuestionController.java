@@ -3,6 +3,7 @@ package com.harshbisht.ExamService.controller;
 import com.harshbisht.ExamService.dto.QuestionDTO.AddQuestionRequest;
 import com.harshbisht.ExamService.dto.QuestionDTO.QuestionResponse;
 import com.harshbisht.ExamService.service.QuestionService;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -16,15 +17,16 @@ public class QuestionController {
 
     private final QuestionService questionService;
 
-    // TEACHER APIs
-
     @PostMapping
     public ResponseEntity<QuestionResponse> addQuestion(
             @PathVariable Long examId,
-            @RequestBody AddQuestionRequest request) {
-
+            @Valid @RequestBody AddQuestionRequest request
+    ) {
         return ResponseEntity.ok(
-                questionService.addQuestionInExam(examId, request)
+                questionService.addQuestionInExam(
+                        examId,
+                        request
+                )
         );
     }
 
@@ -32,28 +34,34 @@ public class QuestionController {
     public ResponseEntity<QuestionResponse> updateQuestion(
             @PathVariable Long examId,
             @PathVariable Long questionId,
-            @RequestBody AddQuestionRequest request) {
-
+            @Valid @RequestBody AddQuestionRequest request
+    ) {
         return ResponseEntity.ok(
-                questionService.updateQuestion(examId, questionId, request)
+                questionService.updateQuestion(
+                        examId,
+                        questionId,
+                        request
+                )
         );
     }
 
     @DeleteMapping("/{questionId}")
     public ResponseEntity<Void> deleteQuestion(
             @PathVariable Long examId,
-            @PathVariable Long questionId) {
+            @PathVariable Long questionId
+    ) {
+        questionService.deleteQuestion(
+                examId,
+                questionId
+        );
 
-        questionService.deleteQuestion(examId, questionId);
         return ResponseEntity.noContent().build();
     }
 
-    // COMMON API
-
     @GetMapping
     public ResponseEntity<List<QuestionResponse>> getQuestions(
-            @PathVariable Long examId) {
-
+            @PathVariable Long examId
+    ) {
         return ResponseEntity.ok(
                 questionService.getAllQuestionsByExam(examId)
         );
@@ -62,10 +70,13 @@ public class QuestionController {
     @GetMapping("/{questionId}")
     public ResponseEntity<QuestionResponse> getQuestionById(
             @PathVariable Long examId,
-            @PathVariable Long questionId) {
-
+            @PathVariable Long questionId
+    ) {
         return ResponseEntity.ok(
-                questionService.getQuestionById(examId, questionId)
+                questionService.getQuestionById(
+                        examId,
+                        questionId
+                )
         );
     }
 }

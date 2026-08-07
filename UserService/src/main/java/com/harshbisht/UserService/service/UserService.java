@@ -18,39 +18,72 @@ public class UserService {
     private final UserRepository repo;
 
     public UserResponse createUser(UserRequest request) {
+
         UserEntity user = new UserEntity();
-        user.setName(request.getName());
+
+        user.setName(request.getName().trim());
+
         UserEntity saved = repo.save(user);
+
         return toResponse(saved);
     }
 
-    /**
-     * FIX: No longer accepts HttpServletRequest — the service layer should be
-     * HTTP-agnostic. The controller extracts what's needed and passes it in.
-     *
-     * @param requestedId   the profile ID being requested
-     * @param requestingUserId the userId from the JWT/header (null for ROLE_SERVICE calls)
-     */
-    public UserResponse getUser(Long requestedId, Long requestingUserId) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+    public UserResponse getUser(
+            Long requestedId,
+            Long requestingUserId
+    ) {
 
-        boolean isAdmin = auth.getAuthorities().stream()
-                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+        Authentication authentication =
+                SecurityContextHolder
+                        .getContext()
+                        .getAuthentication();
 
-        // FIX: requestingUserId was always null before because HeaderAuthFilter
-        // never set the "userId" attribute. Now it does (see HeaderAuthFilter fix).
-        // Admins bypass the ownership check entirely.
-        if (!isAdmin && !requestedId.equals(requestingUserId)) {
-            throw new UnauthorizedAccessException("Access denied: you can only view your own profile");
+        if (authentication == null ||
+                !authentication.isAuthenticated()) {
+
+            throw new UnauthorizedAccessException(
+                    "Authentication required"
+            );
+        }
+
+        boolean isAdmin =
+                authentication.getAuthorities()
+                        .stream()
+                        .anyMatch(authority ->
+                                authority.getAuthority()
+                                        .equals("ROLE_ADMIN")
+                        );
+
+        /*
+         * ADMIN can view any profile.
+         *
+         * STUDENT/TEACHER can only view their own profile.
+         *
+         * If requestingUserId is null, access is denied rather than
+         * accidentally allowing access.
+         */
+        if (!isAdmin) {
+
+            if (requestingUserId == null ||
+                    !requestedId.equals(requestingUserId)) {
+
+                throw new UnauthorizedAccessException(
+                        "Access denied: you can only view your own profile"
+                );
+            }
         }
 
         return repo.findById(requestedId)
                 .map(this::toResponse)
-                .orElseThrow(() -> new UserProfileNotFoundException(
-                        "User not found with id: " + requestedId));
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException(
+                                "User not found with id: " + requestedId
+                        )
+                );
     }
 
     private UserResponse toResponse(UserEntity entity) {
+
         return UserResponse.builder()
                 .id(entity.getId())
                 .name(entity.getName())

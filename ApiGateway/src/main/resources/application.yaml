@@ -31,12 +31,16 @@ server:
   port: 8080
 
 eureka:
+  instance:
+    hostname: localhost
+    prefer-ip-address: true
+    instance-id: ${spring.application.name}:${server.port}
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
 
 jwt:
-  secret: supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd
+  secret: ${JWT_SECRET:supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd}
 
 internal:
-  secret: gateway-secret-123456789101112131415
+  secret: ${INTERNAL_SECRET:gateway-secret-123456789101112131415}

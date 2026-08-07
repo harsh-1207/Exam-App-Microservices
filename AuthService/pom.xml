@@ -45,6 +45,14 @@
 			<artifactId>spring-boot-starter-web</artifactId>
 		</dependency>
 
+		<!-- SECURITY FIX: Bean Validation for RegisterRequest/LoginRequest.
+		     Without this, @NotBlank/@Email/@Size annotations are silently ignored
+		     and any input (including empty strings) reaches the service layer. -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-validation</artifactId>
+		</dependency>
+
 		<!-- OpenFeign: declarative REST client for calling UserService via Gateway/Eureka -->
 		<dependency>
 			<groupId>org.springframework.cloud</groupId>

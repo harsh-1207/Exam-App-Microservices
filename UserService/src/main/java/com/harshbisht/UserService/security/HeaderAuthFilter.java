@@ -12,87 +12,163 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
 import java.util.List;
+import java.util.Set;
 
-/**
- * Single filter handling two auth paths:
- *
- *   PRIORITY 1 — Gateway forwards user requests:
- *     Headers: X-Internal-Secret (validated) + X-User-Id + X-User-Role
- *     → authenticates as the actual user with their role
- *
- *   PRIORITY 2 — Internal service-to-service calls (e.g. AuthService creating a user):
- *     Headers: X-Internal-Secret only (no X-User-Id / X-User-Role)
- *     → authenticates as "internal-service" with ROLE_SERVICE
- *
- *   All other requests (no valid secret) → 403 Forbidden.
- */
 @Component
 public class HeaderAuthFilter extends OncePerRequestFilter {
+
+    private static final Set<String> ALLOWED_ROLES = Set.of(
+            "STUDENT",
+            "TEACHER",
+            "ADMIN"
+    );
 
     @Value("${internal.secret}")
     private String internalSecretExpected;
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
-            throws ServletException, IOException {
+    protected void doFilterInternal(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            FilterChain filterChain
+    ) throws ServletException, IOException {
 
         String internalSecret = request.getHeader("X-Internal-Secret");
-        String userId         = request.getHeader("X-User-Id");
-        String role           = request.getHeader("X-User-Role");
+        String userId = request.getHeader("X-User-Id");
+        String role = request.getHeader("X-User-Role");
 
-        // FIX: Only enforce the secret when it IS present (gateway/service calls).
-        // Requests that arrive without the header at all are rejected here.
-        // Requests that supply a wrong value are also rejected.
-        boolean secretValid = internalSecretExpected.equals(internalSecret);
-
-        if (!secretValid) {
-            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+        /*
+         * Every request reaching UserService must contain the internal secret.
+         * This prevents direct unauthenticated access to the service.
+         */
+        if (!isValidSecret(internalSecret)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Forbidden"
+            );
             return;
         }
 
-        // At this point the shared secret is valid.
+        /*
+         * User identity headers must either BOTH be present or BOTH be absent.
+         *
+         * Both present  -> request came through Gateway as a user.
+         * Both absent   -> internal service-to-service request.
+         *
+         * Having only one header is always invalid.
+         */
+        if ((userId == null) != (role == null)) {
+            response.sendError(
+                    HttpServletResponse.SC_FORBIDDEN,
+                    "Invalid authentication headers"
+            );
+            return;
+        }
+
         if (SecurityContextHolder.getContext().getAuthentication() == null) {
 
-            // PRIORITY 1: Gateway forwarded a real user → use their identity.
-            if (userId != null && role != null) {
-                String formattedRole = role.toUpperCase();
-                formattedRole = formattedRole.startsWith("ROLE_")
-                        ? formattedRole
-                        : "ROLE_" + formattedRole;
+            /*
+             * Gateway user request.
+             */
+            if (userId != null) {
 
-                UsernamePasswordAuthenticationToken auth =
-                        new UsernamePasswordAuthenticationToken(
-                                userId,
-                                null,
-                                List.of(new SimpleGrantedAuthority(formattedRole))
-                        );
+                Long parsedUserId;
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
-
-                // FIX: Store parsed userId as a request attribute so downstream
-                // services (UserService.getUser) can read it without touching HTTP headers.
                 try {
-                    request.setAttribute("userId", Long.parseLong(userId));
-                } catch (NumberFormatException ignored) {
-                    // non-numeric userId — leave attribute null, service will handle it
+                    parsedUserId = Long.parseLong(userId);
+                } catch (NumberFormatException ex) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user identity"
+                    );
+                    return;
                 }
 
+                if (parsedUserId <= 0) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user identity"
+                    );
+                    return;
+                }
+
+                String normalizedRole = role.trim().toUpperCase();
+
+                /*
+                 * Never blindly convert arbitrary client-controlled role
+                 * values into Spring authorities.
+                 */
+                if (!ALLOWED_ROLES.contains(normalizedRole)) {
+                    response.sendError(
+                            HttpServletResponse.SC_FORBIDDEN,
+                            "Invalid user role"
+                    );
+                    return;
+                }
+
+                UsernamePasswordAuthenticationToken authentication =
+                        new UsernamePasswordAuthenticationToken(
+                                parsedUserId.toString(),
+                                null,
+                                List.of(
+                                        new SimpleGrantedAuthority(
+                                                "ROLE_" + normalizedRole
+                                        )
+                                )
+                        );
+
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
+
+                /*
+                 * Controller/service can use this instead of trusting the
+                 * raw HTTP header again.
+                 */
+                request.setAttribute("userId", parsedUserId);
+
             } else {
-                // PRIORITY 2: Internal service call (no user headers) → ROLE_SERVICE.
-                UsernamePasswordAuthenticationToken auth =
+
+                /*
+                 * AuthService -> UserService.
+                 *
+                 * No user identity headers means this is an internal
+                 * service request.
+                 */
+                UsernamePasswordAuthenticationToken authentication =
                         new UsernamePasswordAuthenticationToken(
                                 "internal-service",
                                 null,
-                                List.of(new SimpleGrantedAuthority("ROLE_SERVICE"))
+                                List.of(
+                                        new SimpleGrantedAuthority("ROLE_SERVICE")
+                                )
                         );
 
-                SecurityContextHolder.getContext().setAuthentication(auth);
+                SecurityContextHolder
+                        .getContext()
+                        .setAuthentication(authentication);
             }
         }
 
         filterChain.doFilter(request, response);
+    }
+
+    private boolean isValidSecret(String providedSecret) {
+
+        if (providedSecret == null || internalSecretExpected == null) {
+            return false;
+        }
+
+        /*
+         * Constant-time comparison prevents timing attacks against the
+         * internal secret.
+         */
+        return MessageDigest.isEqual(
+                internalSecretExpected.getBytes(StandardCharsets.UTF_8),
+                providedSecret.getBytes(StandardCharsets.UTF_8)
+        );
     }
 }

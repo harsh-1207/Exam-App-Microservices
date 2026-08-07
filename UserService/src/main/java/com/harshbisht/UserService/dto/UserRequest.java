@@ -1,12 +1,17 @@
 package com.harshbisht.UserService.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-// FIX: Separate DTO for incoming requests — never expose JPA entities directly
-// in your controller layer (mass-assignment risk + leaks DB structure).
 @Data
 public class UserRequest {
+
+    @NotBlank(message = "Name is required")
+    @Size(
+            min = 2,
+            max = 100,
+            message = "Name must be between 2 and 100 characters"
+    )
     private String name;
-    private String email;
-    private String role;
 }

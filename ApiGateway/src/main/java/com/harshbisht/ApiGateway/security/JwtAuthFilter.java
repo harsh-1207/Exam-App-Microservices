@@ -30,7 +30,6 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
     // GlobalFilter -> runs for every request through gateway
     // Ordered → controls when it runs
 
-//    private String secret = "supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd";
     @Value("${jwt.secret}")
     private String secret;
 
@@ -43,7 +42,23 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
         String path = exchange.getRequest().getURI().getPath();
 
-        // Skip /auth/** paths
+        // SECURITY FIX: strip any client-supplied trust headers on every request,
+        // including /auth/** (which skips JWT validation below). These three
+        // headers are how downstream services decide who the caller is — a
+        // client must never be able to set them directly. Doing this
+        // unconditionally, before the /auth short-circuit, means AuthService
+        // is protected too, even though it doesn't currently rely on these
+        // headers — if that ever changes, this still holds.
+        ServerHttpRequest strippedRequest = exchange.getRequest().mutate()
+                .headers(httpHeaders -> {
+                    httpHeaders.remove("X-Internal-Secret");
+                    httpHeaders.remove("X-User-Id");
+                    httpHeaders.remove("X-User-Role");
+                })
+                .build();
+        exchange = exchange.mutate().request(strippedRequest).build();
+
+        // Skip /auth/** paths — no JWT to validate yet (login/register happen here)
         if (path.startsWith("/auth")) {
             return chain.filter(exchange);
         }
@@ -70,12 +85,25 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
                     .parseClaimsJws(token)
                     .getBody();
 
-            // Mutate request with user info
-            // sent further to services, with these headers
+            // SECURITY FIX (bug 1): use the injected internalSecret field, not a
+            // hardcoded literal. The old code declared @Value("${internal.secret}")
+            // but then ignored it and sent a fixed string instead — changing
+            // internal.secret anywhere (e.g. via env var in a real deployment)
+            // would silently break every downstream call, since the gateway kept
+            // sending the stale hardcoded value forever.
+            //
+            // SECURITY FIX (bug 2): use .headers(h -> h.set(...)) instead of
+            // .header(name, value). Builder#header() ADDS a value alongside any
+            // existing header of the same name rather than replacing it. Since
+            // we already stripped client-supplied values above, this is now
+            // belt-and-suspenders — but .set() is also just the correct method
+            // to express "this header has exactly this one value."
             ServerHttpRequest mutatedRequest = exchange.getRequest().mutate()
-                    .header("X-Internal-Secret", "gateway-secret-123456789101112131415")
-                    .header("X-User-Id", claims.get("userId").toString())
-                    .header("X-User-Role", claims.get("role").toString())
+                    .headers(httpHeaders -> {
+                        httpHeaders.set("X-Internal-Secret", internalSecret);
+                        httpHeaders.set("X-User-Id", claims.get("userId").toString());
+                        httpHeaders.set("X-User-Role", claims.get("role").toString());
+                    })
                     .build();
 
             return chain.filter(exchange.mutate().request(mutatedRequest).build());
