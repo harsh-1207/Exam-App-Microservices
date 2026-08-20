@@ -16,3 +16,9 @@ eureka:
   servlet:
     session:
       timeout: 15m   # auto logout after 15 minutes inactivity
+
+jwt:
+  secret: ${JWT_SECRET:supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd}
+
+internal:
+  secret: ${INTERNAL_SECRET:gateway-secret-123456789101112131415}

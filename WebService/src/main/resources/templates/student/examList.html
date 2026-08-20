@@ -1,26 +1,109 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <title>Exams</title>
+  <meta charset="UTF-8">
+  <title>Available Exams</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+      color: #0f172a;
+    }
+    .page-shell {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 24px;
+    }
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #0f172a;
+      color: #fff;
+      border-radius: 18px;
+      padding: 16px 24px;
+      margin-top: 24px;
+      box-sizing: border-box;
+    }
+    .brand { font-weight: 700; font-size: 1.2rem; }
+    .nav-links { display: flex; gap: 16px; }
+    .nav-links a, .logout-btn {
+      color: #e2e8f0;
+      text-decoration: none;
+      font-weight: 600;
+      padding: 10px 12px;
+      border-radius: 10px;
+    }
+    .nav-links a:hover, .logout-btn:hover { background: rgba(255,255,255,0.12); }
+    .panel {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 14px 30px rgba(15,23,42,0.08);
+      padding: 32px;
+      margin-top: 24px;
+    }
+    h2 { margin-top: 0; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 16px;
+    }
+    th, td {
+      padding: 14px 12px;
+      border-bottom: 1px solid #e5e7eb;
+      text-align: left;
+    }
+    th { background: #eff6ff; }
+    .action-btn {
+      display: inline-block;
+      text-decoration: none;
+      background: #2563eb;
+      color: white;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+    .empty {
+      text-align: center;
+      padding: 20px;
+      color: #475569;
+    }
+  </style>
 </head>
 <body>
+<div th:replace="~{fragments/role-nav :: studentNav('subjects')}"></div>
 
-<h2>Exams in Subject</h2>
+<div class="page-shell">
+  <div class="panel">
+    <h2>Available Exams</h2>
 
-<table border="1">
-  <tr>
-    <th>Exam</th>
-    <th>Duration</th>
-    <th>Action</th>
-  </tr>
-  <tr th:each="exam : ${exams}">
-    <td th:text="${exam.title}"></td>
-    <td th:text="${exam.duration} + ' mins'"></td>
-    <td>
-      <a th:href="@{/student/takeExam/{id}(id=${exam.id})}">Start</a>
-    </td>
-  </tr>
-</table>
+    <div th:if="${exams != null and !#lists.isEmpty(exams)}">
+      <table>
+        <thead>
+        <tr>
+          <th>Exam</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="exam : ${exams}">
+          <td th:text="${exam.title}">Exam title</td>
+          <td th:text="${exam.published ? 'Published' : 'Draft'}">Status</td>
+          <td>
+            <a class="action-btn" th:href="@{/student/takeExam/{id}(id=${exam.id})}">Start</a>
+          </td>
+        </tr>
+        </tbody>
+      </table>
+    </div>
 
+    <div class="empty" th:if="${exams == null or #lists.isEmpty(exams)}">
+      No exams are available for this subject yet.
+    </div>
+    <p style="margin-top: 20px;"><a th:href="@{/student/subjects}" style="color: #1d4ed8; font-weight: 600;">Back to subjects</a></p>
+  </div>
+</div>
 </body>
 </html>

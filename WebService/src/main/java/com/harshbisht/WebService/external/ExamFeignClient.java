@@ -41,8 +41,8 @@ public interface ExamFeignClient {
     @PostMapping("/exams")
     public ResponseEntity<ExamResponse> createExam(@RequestBody CreateExamRequest request);
 
-    @GetMapping("/exams/subject/{subjectId}")
-    List<ExamResponse> getExamsBySubject(@PathVariable Long subjectId);
+    @GetMapping("/exams")
+    List<ExamResponse> getExamsBySubject(@RequestParam("subjectId") Long subjectId);
 
     @GetMapping("/exams/{examId}/full")
     ExamDetailResponse getExamWithQuestions(@PathVariable Long examId);
