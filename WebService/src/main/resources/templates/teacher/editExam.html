@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Exam</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #f5f7ff, #eef8f2);
+            color: #1f2937;
+        }
+        .page-shell {
+            max-width: 980px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #0f766e;
+            color: #fff;
+            border-radius: 18px;
+            padding: 16px 24px;
+            box-shadow: 0 12px 30px rgba(15, 118, 110, 0.18);
+            margin-bottom: 24px;
+        }
+        .brand { font-size: 1.3rem; font-weight: 700; }
+        .nav-links { display: flex; gap: 16px; }
+        .nav-links a, .logout-btn {
+            color: #ccfbf1;
+            text-decoration: none;
+            font-weight: 600;
+            padding: 10px 12px;
+            border-radius: 10px;
+        }
+        .nav-links a:hover, .logout-btn:hover { background: rgba(255,255,255,0.12); }
+        .panel {
+            background: #fff;
+            border-radius: 20px;
+            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
+            padding: 32px;
+        }
+        h2 { margin-top: 0; }
+        .exam-card {
+            background: #f8fafc;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 16px 18px;
+            margin-bottom: 20px;
+        }
+        .question-box {
+            border: 1px solid #dbeafe;
+            border-radius: 12px;
+            background: #f8fbff;
+            padding: 16px;
+            margin-top: 16px;
+        }
+        .option-list {
+            margin: 12px 0 0;
+            padding-left: 18px;
+        }
+        .option-list li { margin: 8px 0; }
+        .btn {
+            display: inline-block;
+            padding: 12px 16px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            margin-top: 12px;
+        }
+        .secondary { background: #e5e7eb; color: #111827; }
+    </style>
+</head>
+<body>
+<div class="page-shell">
+    <nav class="topbar">
+        <div class="brand">Exam Portal</div>
+        <div class="nav-links">
+            <a href="/teacher/home">Dashboard</a>
+            <a href="/teacher/subjects">Subjects</a>
+        </div>
+        <a href="/logout" class="logout-btn">Logout</a>
+    </nav>
+
+    <div class="panel">
+        <h2>Edit Exam</h2>
+
+        <div class="exam-card">
+            <p><strong>Exam ID:</strong> <span th:text="${exam.id}">-</span></p>
+            <p><strong>Exam Title:</strong> <span th:text="${exam.title}">-</span></p>
+            <p><strong>Status:</strong> <span th:text="${exam.published ? 'Published' : 'Draft'}">-</span></p>
+        </div>
+
+        <div th:if="${exam.questions != null and !#lists.isEmpty(exam.questions)}">
+            <div class="question-box" th:each="question : ${exam.questions}">
+                <h3 th:text="${question.questionText}">Question</h3>
+                <ul class="option-list">
+                    <li th:each="option : ${question.options}">
+                        <span th:text="${option.text}"></span>
+                        <span th:if="${option.correct}" style="color:green; font-weight:700;"> (Correct)</span>
+                    </li>
+                </ul>
+                <div style="margin-top:10px;">
+                    <a th:href="@{/teacher/exams/{examId}/questions/{questionId}/edit(examId=${exam.id},questionId=${question.id})" class="btn" style="background:#0ea5a4;color:#fff;">Edit Question</a>
+                </div>
+            </div>
+        </div>
+
+        <div th:if="${exam.questions == null or #lists.isEmpty(exam.questions)}">
+            <p>No questions have been added to this exam yet.</p>
+        </div>
+
+        <a th:href="@{/teacher/subjects}" class="btn secondary">Back to Subjects</a>
+    </div>
+</div>
+</body>
+</html>

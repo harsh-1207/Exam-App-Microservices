@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Edit Question</title>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background:#f8fafc; color:#0f172a; }
+        .shell{ max-width:760px; margin:40px auto; padding:20px; background:#fff; border-radius:12px; box-shadow:0 8px 20px rgba(15,23,42,0.06);} 
+        label{ display:block; margin-top:12px; font-weight:700; }
+        input[type=text]{ width:100%; padding:10px; border-radius:8px; border:1px solid #e6edf3; }
+        .option-row{ display:flex; gap:8px; align-items:center; margin-top:8px; }
+        .radio{ width:18px; }
+        .actions{ margin-top:18px; }
+        .btn{ padding:10px 14px; border-radius:10px; text-decoration:none; font-weight:700; }
+        .primary{ background:#0f766e; color:#fff; }
+        .secondary{ background:#e5e7eb; color:#111827; }
+    </style>
+</head>
+<body>
+<div class="shell">
+    <h2>Edit Question</h2>
+
+    <form th:action="@{/teacher/exams/{examId}/questions/{questionId}/edit(examId=${examId},questionId=${question.id})}" method="post">
+        <label>Question Text</label>
+        <input type="text" name="questionText" th:value="${question.questionText}" required />
+
+        <label>Options (mark the correct one)</label>
+        <div th:each="opt,iterStat : ${question.options}">
+            <div class="option-row">
+                <input class="radio" type="radio" name="correctIndex" th:value="${iterStat.index}" th:checked="${opt.correct}" />
+                <input type="text" name="optionText" th:value="${opt.text}" required />
+            </div>
+        </div>
+
+        <div class="actions">
+            <button type="submit" class="btn primary">Save</button>
+            <a th:href="@{/teacher/editExam/{examId}(examId=${examId})}" class="btn secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+</body>
+</html>

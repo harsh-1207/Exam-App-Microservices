@@ -110,5 +110,41 @@ public class TeacherController {
         return "teacher/editExam";
     }
 
+    @GetMapping("/exams/{examId}/questions/{questionId}/edit")
+    public String editQuestionPage(@PathVariable Long examId,
+                                   @PathVariable Long questionId,
+                                   Model model) {
+        model.addAttribute("question", teacherService.getQuestion(examId, questionId));
+        model.addAttribute("examId", examId);
+        return "teacher/editQuestion";
+    }
+
+    @PostMapping("/exams/{examId}/questions/{questionId}/edit")
+    public String editQuestion(@PathVariable Long examId,
+                               @PathVariable Long questionId,
+                               @RequestParam String questionText,
+                               @RequestParam List<String> optionText,
+                               @RequestParam int correctIndex) {
+
+        List<com.harshbisht.WebService.external.dto.OptionDTO.OptionRequest> options = new java.util.ArrayList<>();
+        for (int i = 0; i < optionText.size(); i++) {
+            options.add(new com.harshbisht.WebService.external.dto.OptionDTO.OptionRequest(
+                    null,
+                    optionText.get(i),
+                    i == correctIndex
+            ));
+        }
+
+        com.harshbisht.WebService.external.dto.QuestionDTO.AddQuestionRequest request =
+                com.harshbisht.WebService.external.dto.QuestionDTO.AddQuestionRequest.builder()
+                        .examId(examId)
+                        .questionText(questionText)
+                        .options(options)
+                        .build();
+
+        teacherService.updateQuestion(examId, questionId, request);
+
+        return "redirect:/teacher/editExam/" + examId;
+    }
 
 }
