@@ -279,4 +279,36 @@ public class ExamService {
         question.getOptions().clear();
         question.getOptions().addAll(updated);
     }
+
+    public EditExamRequest getExamWithQuestions(Long examId) {
+        ExamEntity exam = examRepository.findById(examId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
+
+        assertOwnership(exam);
+
+        List<QuestionEditRequest> questionResponses = exam.getQuestions().stream()
+                .map(question -> QuestionEditRequest.builder()
+                        .id(question.getId())
+                        .questionText(question.getQuestionText())
+                        .marks(null)
+                        .options(
+                                question.getOptions().stream()
+                                        .map(option -> OptionEditRequest.builder()
+                                                .id(option.getId())
+                                                .text(option.getText())
+                                                .correct(option.isCorrect())
+                                                .build()
+                                        )
+                                        .toList()
+                        )
+                        .build()
+                )
+                .toList();
+
+        return EditExamRequest.builder()
+                .title(exam.getTitle())
+                .subjectId(exam.getSubject().getId())
+                .questions(questionResponses)
+                .build();
+    }
 }

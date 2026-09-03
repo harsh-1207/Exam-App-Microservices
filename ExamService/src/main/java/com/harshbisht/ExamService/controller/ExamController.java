@@ -107,4 +107,13 @@ public class ExamController {
                 examService.getExamForAttempt(examId)
         );
     }
+
+    @GetMapping("/{examId}/full")
+    public ResponseEntity<EditExamRequest> getExamWithQuestions(
+            @PathVariable Long examId
+    ) {
+        return ResponseEntity.ok(
+                examService.getExamWithQuestions(examId)
+        );
+    }
 }
