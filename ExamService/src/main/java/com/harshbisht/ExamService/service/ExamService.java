@@ -280,20 +280,19 @@ public class ExamService {
         question.getOptions().addAll(updated);
     }
 
-    public EditExamRequest getExamWithQuestions(Long examId) {
+    public com.harshbisht.ExamService.dto.ExamDTO.ExamDetailResponse getExamWithQuestions(Long examId) {
         ExamEntity exam = examRepository.findById(examId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
         assertOwnership(exam);
 
-        List<QuestionEditRequest> questionResponses = exam.getQuestions().stream()
-                .map(question -> QuestionEditRequest.builder()
+        List<QuestionResponse> questionResponses = exam.getQuestions().stream()
+                .map(question -> com.harshbisht.ExamService.dto.QuestionDTO.QuestionResponse.builder()
                         .id(question.getId())
                         .questionText(question.getQuestionText())
-                        .marks(null)
                         .options(
                                 question.getOptions().stream()
-                                        .map(option -> OptionEditRequest.builder()
+                                        .map(option -> com.harshbisht.ExamService.dto.OptionDTO.OptionRequest.builder()
                                                 .id(option.getId())
                                                 .text(option.getText())
                                                 .correct(option.isCorrect())
@@ -305,9 +304,10 @@ public class ExamService {
                 )
                 .toList();
 
-        return EditExamRequest.builder()
+        return com.harshbisht.ExamService.dto.ExamDTO.ExamDetailResponse.builder()
+                .id(exam.getId())
                 .title(exam.getTitle())
-                .subjectId(exam.getSubject().getId())
+                .published(exam.isPublished())
                 .questions(questionResponses)
                 .build();
     }

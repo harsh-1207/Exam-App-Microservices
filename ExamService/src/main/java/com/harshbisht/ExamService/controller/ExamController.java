@@ -2,6 +2,7 @@ package com.harshbisht.ExamService.controller;
 
 import com.harshbisht.ExamService.dto.ExamDTO.CreateExamRequest;
 import com.harshbisht.ExamService.dto.ExamDTO.EditExamRequest;
+import com.harshbisht.ExamService.dto.ExamDTO.ExamDetailResponse;
 import com.harshbisht.ExamService.dto.ExamDTO.ExamAttemptResponse;
 import com.harshbisht.ExamService.dto.ExamDTO.ExamResponse;
 import com.harshbisht.ExamService.service.ExamService;
@@ -109,7 +110,7 @@ public class ExamController {
     }
 
     @GetMapping("/{examId}/full")
-    public ResponseEntity<EditExamRequest> getExamWithQuestions(
+    public ResponseEntity<ExamDetailResponse> getExamWithQuestions(
             @PathVariable Long examId
     ) {
         return ResponseEntity.ok(

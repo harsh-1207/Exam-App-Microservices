@@ -51,6 +51,10 @@ public class TeacherService {
         return examFeign.getExamWithQuestions(examId);
     }
 
+    public ExamResponse editExam(Long examId, com.harshbisht.WebService.external.dto.ExamDTO.EditExamRequest request) {
+        return examFeign.editFullExam(examId, request).getBody();
+    }
+
     public ExamResponse createExam(Long subjectId, String title) {
         CreateExamRequest request = new CreateExamRequest(title, subjectId);
 
