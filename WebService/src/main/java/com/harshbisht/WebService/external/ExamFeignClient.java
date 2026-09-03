@@ -67,9 +67,17 @@ public interface ExamFeignClient {
     @GetMapping("/exams/{examId}/questions")
     public List<QuestionResponse> getQuestions(@PathVariable Long examId);
 
+    @GetMapping("/exams/{examId}/questions/{questionId}")
+    public QuestionResponse getQuestion(@PathVariable Long examId, @PathVariable Long questionId);
+
     @PostMapping("/exams/{examId}/questions")
     public QuestionResponse addQuestion(@PathVariable Long examId,
                                         @RequestBody AddQuestionRequest request);
+
+    @PutMapping("/exams/{examId}/questions/{questionId}")
+    public QuestionResponse updateQuestion(@PathVariable Long examId,
+                                           @PathVariable Long questionId,
+                                           @RequestBody AddQuestionRequest request);
 
     // *********************************************************************************************************************
 }

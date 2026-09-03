@@ -73,5 +73,12 @@ public class TeacherService {
         examFeign.addQuestion(examId, request);
     }
 
+    public com.harshbisht.WebService.external.dto.QuestionDTO.QuestionResponse getQuestion(Long examId, Long questionId) {
+        return examFeign.getQuestion(examId, questionId);
+    }
+
+    public com.harshbisht.WebService.external.dto.QuestionDTO.QuestionResponse updateQuestion(Long examId, Long questionId, AddQuestionRequest request) {
+        return examFeign.updateQuestion(examId, questionId, request);
+    }
 
 }
