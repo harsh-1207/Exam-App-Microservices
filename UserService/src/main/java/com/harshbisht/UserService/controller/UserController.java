@@ -2,6 +2,7 @@ package com.harshbisht.UserService.controller;
 
 import com.harshbisht.UserService.dto.UserRequest;
 import com.harshbisht.UserService.dto.UserResponse;
+import com.harshbisht.UserService.exception.UnauthorizedAccessException;
 import com.harshbisht.UserService.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -18,14 +19,27 @@ public class UserController {
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(
+    public UserResponse createUser(                 // Create a new user
             @Valid @RequestBody UserRequest user
     ) {
         return userService.createUser(user);
     }
 
+    @GetMapping("/me")
+    public UserResponse getMyDetails(
+            HttpServletRequest request
+    ) {
+        Long currentUserId = (Long) request.getAttribute("userId");
+
+        if (currentUserId == null) {
+            throw new UnauthorizedAccessException("Authentication required");
+        }
+
+        return userService.getMyDetails(currentUserId);
+    }
+
     @GetMapping("/{id}")
-    public UserResponse getUser(
+    public UserResponse getUser(                    // Get a specific user by their ID
             @PathVariable Long id,
             HttpServletRequest request
     ) {

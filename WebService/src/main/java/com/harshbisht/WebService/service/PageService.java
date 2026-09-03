@@ -27,26 +27,24 @@ public class PageService {
         session.setAttribute("token", token);
         session.setAttribute("authResponse", response);
 
-        Long userId = extractUserId(token);
+        String role = resolveRole(token);
         String displayName = "User";
 
-        if (userId != null) {
-            try {
-                UserResponse user = userFeign.getUser(userId);
-                if (user != null && user.getName() != null && !user.getName().isBlank()) {
-                    displayName = user.getName();
-                }
-            } catch (Exception ignored) {
-                // Fall back to email only if the user service is unavailable.
+        try {
+            UserResponse user = userFeign.getMyDetails();
+            if (user != null && user.getName() != null && !user.getName().isBlank()) {
+                displayName = user.getName();
             }
+        } catch (Exception ignored) {
+            // Keep the fallback name if the user profile is unavailable.
         }
 
         String email = req.getEmail() == null ? "" : req.getEmail().trim();
-        session.setAttribute("role", resolveRole(token));
+        session.setAttribute("role", role);
         session.setAttribute("email", email);
         session.setAttribute("name", displayName);
 
-        return resolveRole(token);
+        return role;
     }
 
     public void register(RegisterRequest req) {

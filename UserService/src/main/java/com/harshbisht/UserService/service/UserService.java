@@ -82,6 +82,20 @@ public class UserService {
                 );
     }
 
+    public UserResponse getMyDetails(Long currentUserId) {
+        if (currentUserId == null) {
+            throw new UnauthorizedAccessException("Authentication required");
+        }
+
+        return repo.findById(currentUserId)
+                .map(this::toResponse)
+                .orElseThrow(() ->
+                        new UserProfileNotFoundException(
+                                "User not found with id: " + currentUserId
+                        )
+                );
+    }
+
     private UserResponse toResponse(UserEntity entity) {
 
         return UserResponse.builder()
