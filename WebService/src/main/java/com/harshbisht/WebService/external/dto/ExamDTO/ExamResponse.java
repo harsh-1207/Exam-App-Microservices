@@ -7,4 +7,5 @@ public class ExamResponse {
     private Long id;
     private String title;
     private boolean published;
+    private Long teacherId;
 }

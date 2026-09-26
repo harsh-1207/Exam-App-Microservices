@@ -10,6 +10,7 @@ public class EditExamRequest {
 
     private String title;
     private Long subjectId;
+    private Boolean published;
 
     private List<QuestionEditRequest> questions;
 }

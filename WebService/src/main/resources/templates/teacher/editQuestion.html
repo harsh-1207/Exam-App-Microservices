@@ -17,18 +17,21 @@
     </style>
 </head>
 <body>
+<div th:replace="~{fragments/role-nav :: teacherNav('subjects')}"></div>
 <div class="shell">
     <h2>Edit Question</h2>
 
-    <form th:action="@{/teacher/exams/{examId}/questions/{questionId}/edit(examId=${examId},questionId=${question.id})}" method="post">
+    <form th:action="@{/teacher/exams/{examId}/questions/{questionId}/edit(examId=${examId},questionId=${question.id})}"
+          method="post">
         <label>Question Text</label>
-        <input type="text" name="questionText" th:value="${question.questionText}" required />
+        <input type="text" name="questionText" th:value="${question.questionText}" required/>
 
         <label>Options (mark the correct one)</label>
         <div th:each="opt,iterStat : ${question.options}">
             <div class="option-row">
-                <input class="radio" type="radio" name="correctIndex" th:value="${iterStat.index}" th:checked="${opt.correct}" />
-                <input type="text" name="optionText" th:value="${opt.text}" required />
+                <input class="radio" type="radio" name="correctIndex" th:value="${iterStat.index}"
+                       th:checked="${opt.correct}"/>
+                <input type="text" name="optionText" th:value="${opt.text}" required/>
             </div>
         </div>
 

@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 @FeignClient(name = "AUTH-SERVICE")
 public interface AuthFeignClient {
-    @PostMapping("/auth/register")  // use /auth/** so Gateway routes correctly
-    String register(@RequestBody RegisterRequest req);
+	@PostMapping("/auth/register") // use /auth/** so Gateway routes correctly
+	String register(@RequestBody RegisterRequest req);
 
-    @PostMapping("/auth/login")
-    AuthResponse login(@RequestBody LoginRequest req);
+	@PostMapping("/auth/login")
+	AuthResponse login(@RequestBody LoginRequest req);
 }

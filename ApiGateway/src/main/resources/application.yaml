@@ -23,7 +23,7 @@ spring:
             - id: result-service
               uri: lb://RESULT-SERVICE
               predicates:
-                - Path=/result/**
+                - Path=/results/**
           default-filters:
             - RemoveRequestHeader=Cookie
 

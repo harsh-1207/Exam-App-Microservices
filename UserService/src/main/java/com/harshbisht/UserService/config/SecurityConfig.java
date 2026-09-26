@@ -16,63 +16,46 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final HeaderAuthFilter headerAuthFilter;
+	private final HeaderAuthFilter headerAuthFilter;
 
-    @Bean
-    public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+	@Bean
+	public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+		http
+			.csrf(csrf -> csrf.disable())
+			.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+			.authorizeHttpRequests(auth ->
+				auth
+					/*
+					 * Only internal services can create user profiles.
+					 *
+					 * AuthService sends:
+					 * X-Internal-Secret
+					 *
+					 * but does NOT send:
+					 * X-User-Id
+					 * X-User-Role
+					 *
+					 * Therefore HeaderAuthFilter assigns ROLE_SERVICE.
+					 */
+					.requestMatchers(HttpMethod.POST, "/users")
+					.hasRole("SERVICE")
+					/*
+					 * User profile reads require an authenticated user.
+					 */
+					.requestMatchers(HttpMethod.GET, "/users/**")
+					.hasAnyRole("STUDENT", "TEACHER", "ADMIN")
+					/*
+					 * Fail closed.
+					 *
+					 * Do NOT use authenticated() here because that would
+					 * allow ROLE_SERVICE to access endpoints that haven't
+					 * explicitly been protected above.
+					 */
+					.anyRequest()
+					.denyAll()
+			)
+			.addFilterBefore(headerAuthFilter, UsernamePasswordAuthenticationFilter.class);
 
-        http
-                .csrf(csrf -> csrf.disable())
-
-                .sessionManagement(session ->
-                        session.sessionCreationPolicy(
-                                SessionCreationPolicy.STATELESS
-                        )
-                )
-
-                .authorizeHttpRequests(auth -> auth
-
-                        /*
-                         * Only internal services can create user profiles.
-                         *
-                         * AuthService sends:
-                         * X-Internal-Secret
-                         *
-                         * but does NOT send:
-                         * X-User-Id
-                         * X-User-Role
-                         *
-                         * Therefore HeaderAuthFilter assigns ROLE_SERVICE.
-                         */
-                        .requestMatchers(HttpMethod.POST, "/users")
-                        .hasRole("SERVICE")
-
-                        /*
-                         * User profile reads require an authenticated user.
-                         */
-                        .requestMatchers(HttpMethod.GET, "/users/**")
-                        .hasAnyRole(
-                                "STUDENT",
-                                "TEACHER",
-                                "ADMIN"
-                        )
-
-                        /*
-                         * Fail closed.
-                         *
-                         * Do NOT use authenticated() here because that would
-                         * allow ROLE_SERVICE to access endpoints that haven't
-                         * explicitly been protected above.
-                         */
-                        .anyRequest()
-                        .denyAll()
-                )
-
-                .addFilterBefore(
-                        headerAuthFilter,
-                        UsernamePasswordAuthenticationFilter.class
-                );
-
-        return http.build();
-    }
+		return http.build();
+	}
 }

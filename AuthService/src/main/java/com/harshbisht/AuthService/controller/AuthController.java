@@ -15,18 +15,18 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
 
-    private final AuthService authService;
+	private final AuthService authService;
 
-    @PostMapping("/register")
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest req) {
-        authService.register(req);
-        return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
-    }
+	@PostMapping("/register")
+	@ResponseStatus(HttpStatus.CREATED)
+	public ResponseEntity<String> register(@Valid @RequestBody RegisterRequest req) { // Register a new user
+		authService.register(req);
+		return ResponseEntity.status(HttpStatus.CREATED).body("User registered successfully");
+	}
 
-    @PostMapping("/login")
-    public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) {
-        String token = authService.login(req);
-        return ResponseEntity.ok(new AuthResponse(token));
-    }
+	@PostMapping("/login")
+	public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest req) { // Authenticate user and return JWT token
+		String token = authService.login(req);
+		return ResponseEntity.ok(new AuthResponse(token));
+	}
 }

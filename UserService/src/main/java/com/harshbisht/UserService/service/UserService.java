@@ -15,92 +15,67 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final UserRepository repo;
+	private final UserRepository repo;
 
-    public UserResponse createUser(UserRequest request) {
+	public UserResponse createUser(UserRequest request) {
+		UserEntity user = new UserEntity();
+		user.setName(request.getName().trim());
+		UserEntity saved = repo.save(user);
 
-        UserEntity user = new UserEntity();
+		return toResponse(saved);
+	}
 
-        user.setName(request.getName().trim());
+	public UserResponse getUserSummary(Long id) {
+		return repo
+			.findById(id)
+			.map(this::toResponse)
+			.orElseThrow(() -> new UserProfileNotFoundException("User not found with id: " + id));
+	}
 
-        UserEntity saved = repo.save(user);
+	public UserResponse getUser(Long requestedId, Long requestingUserId) {
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
-        return toResponse(saved);
-    }
+		if (authentication == null || !authentication.isAuthenticated()) {
+			throw new UnauthorizedAccessException("Authentication required");
+		}
 
-    public UserResponse getUser(
-            Long requestedId,
-            Long requestingUserId
-    ) {
+		boolean isAdmin = authentication
+			.getAuthorities()
+			.stream()
+			.anyMatch(authority -> authority.getAuthority().equals("ROLE_ADMIN"));
 
-        Authentication authentication =
-                SecurityContextHolder
-                        .getContext()
-                        .getAuthentication();
+		/*
+		 * ADMIN can view any profile.
+		 *
+		 * STUDENT/TEACHER can only view their own profile.
+		 *
+		 * If requestingUserId is null, access is denied rather than
+		 * accidentally allowing access.
+		 */
+		if (!isAdmin) {
+			if (requestingUserId == null || !requestedId.equals(requestingUserId)) {
+				throw new UnauthorizedAccessException("Access denied: you can only view your own profile");
+			}
+		}
 
-        if (authentication == null ||
-                !authentication.isAuthenticated()) {
+		return repo
+			.findById(requestedId)
+			.map(this::toResponse)
+			.orElseThrow(() -> new UserProfileNotFoundException("User not found with id: " + requestedId));
+	}
 
-            throw new UnauthorizedAccessException(
-                    "Authentication required"
-            );
-        }
+	public UserResponse getMyDetails(Long currentUserId) {
+		if (currentUserId == null) {
+			throw new UnauthorizedAccessException("Authentication required");
+		}
 
-        boolean isAdmin =
-                authentication.getAuthorities()
-                        .stream()
-                        .anyMatch(authority ->
-                                authority.getAuthority()
-                                        .equals("ROLE_ADMIN")
-                        );
+		return repo
+			.findById(currentUserId)
+			.map(this::toResponse)
+			.orElseThrow(() -> new UserProfileNotFoundException("User not found with id: " + currentUserId));
+	}
 
-        /*
-         * ADMIN can view any profile.
-         *
-         * STUDENT/TEACHER can only view their own profile.
-         *
-         * If requestingUserId is null, access is denied rather than
-         * accidentally allowing access.
-         */
-        if (!isAdmin) {
-
-            if (requestingUserId == null ||
-                    !requestedId.equals(requestingUserId)) {
-
-                throw new UnauthorizedAccessException(
-                        "Access denied: you can only view your own profile"
-                );
-            }
-        }
-
-        return repo.findById(requestedId)
-                .map(this::toResponse)
-                .orElseThrow(() ->
-                        new UserProfileNotFoundException(
-                                "User not found with id: " + requestedId
-                        )
-                );
-    }
-
-    public UserResponse getMyDetails(Long currentUserId) {
-        if (currentUserId == null) {
-            throw new UnauthorizedAccessException("Authentication required");
-        }
-
-        return repo.findById(currentUserId)
-                .map(this::toResponse)
-                .orElseThrow(() ->
-                        new UserProfileNotFoundException(
-                                "User not found with id: " + currentUserId
-                        )
-                );
-    }
-
-    private UserResponse toResponse(UserEntity entity) {
-
-        return UserResponse.builder()
-                .id(entity.getId())
-                .name(entity.getName())
-                .build();
-    }
+	private UserResponse toResponse(UserEntity entity) {
+		return UserResponse.builder().id(entity.getId()).name(entity.getName()).build();
+	}
 }

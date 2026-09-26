@@ -7,7 +7,9 @@ import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+
 /*
 Flow:
 User logs in → email stored in session.
@@ -19,66 +21,79 @@ View (student/home.html) renders with the user’s email displayed.
 @RequiredArgsConstructor
 public class PageController {
 
-    private final PageService pageService;
+	private final PageService pageService;
 
-    @GetMapping("/")
-    public String home() {
-        return "home";
-    }
+	@GetMapping("/")
+	public String home() {
+		return "home";
+	}
 
-    @GetMapping("/login")
-    public String loginPage(Model model) {
-        model.addAttribute("user", new LoginRequest());
-        return "login";
-    }
+	@GetMapping("/login")
+	public String loginPage(Model model) {
+		model.addAttribute("user", new LoginRequest());
+		return "login";
+	}
 
-    @PostMapping("/login")
-    public String login(LoginRequest req, HttpSession session) {
+	@PostMapping("/login")
+	public String login(LoginRequest req, HttpSession session) {
+		// Call AuthService -> /auth/login
+		String loginRole = pageService.login(req, session);
 
-        // Call AuthService -> /auth/login
-        String loginRole = pageService.login(req, session);
+		return "redirect:/" + loginRole.toLowerCase() + "/home";
+	}
 
-        return "redirect:/" + loginRole.toLowerCase() + "/home";
-    }
+	@GetMapping("/register")
+	public String registerPage(Model model) {
+		model.addAttribute("user", new RegisterRequest());
+		return "register";
+	}
 
-    @GetMapping("/register")
-    public String registerPage(Model model) {
-        model.addAttribute("user", new RegisterRequest());
-        return "register";
-    }
+	@PostMapping("/register")
+	public String register(RegisterRequest req) {
+		pageService.register(req);
+		return "redirect:/login";
+	}
 
-    @PostMapping("/register")
-    public String register(RegisterRequest req) {
-        pageService.register(req);
-        return "redirect:/login";
-    }
+	@GetMapping("/logout")
+	public String logout(HttpSession session) {
+		session.invalidate();
+		return "redirect:/";
+	}
 
-    @GetMapping("/logout")
-    public String logout(HttpSession session) {
-        session.invalidate();
-        return "redirect:/";
-    }
+	@GetMapping("/student/home")
+	public String student(HttpSession session, Model model) {
+		model.addAttribute(
+			"name",
+			session.getAttribute("name") != null ? session.getAttribute("name") : session.getAttribute("email")
+		);
+		return "student/home";
+	}
 
-    @GetMapping("/student/home")
-    public String student(HttpSession session, Model model) {
-        model.addAttribute("name", session.getAttribute("email"));
-        return "student/home";
-    }
+	@GetMapping("/student/help")
+	public String studentHelp() {
+		return "student/help";
+	}
 
-    @GetMapping("/teacher/home")
-    public String teacher(HttpSession session, Model model) {
-        model.addAttribute("name", session.getAttribute("email"));
-        return "teacher/home";
-    }
+	@GetMapping("/teacher/home")
+	public String teacher(HttpSession session, Model model) {
+		model.addAttribute(
+			"name",
+			session.getAttribute("name") != null ? session.getAttribute("name") : session.getAttribute("email")
+		);
+		return "teacher/home";
+	}
 
-    @GetMapping("/admin/home")
-    public String admin(HttpSession session, Model model) {
-        model.addAttribute("name", session.getAttribute("email"));
-        return "admin/home";
-    }
+	@GetMapping("/admin/home")
+	public String admin(HttpSession session, Model model) {
+		model.addAttribute(
+			"name",
+			session.getAttribute("name") != null ? session.getAttribute("name") : session.getAttribute("email")
+		);
+		return "admin/home";
+	}
 
-    @GetMapping("/access-denied")
-    public String denied() {
-        return "access-denied";
-    }
+	@GetMapping("/access-denied")
+	public String denied() {
+		return "access-denied";
+	}
 }

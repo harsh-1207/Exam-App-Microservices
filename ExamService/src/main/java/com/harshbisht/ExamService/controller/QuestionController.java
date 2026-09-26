@@ -18,7 +18,7 @@ public class QuestionController {
     private final QuestionService questionService;
 
     @PostMapping
-    public ResponseEntity<QuestionResponse> addQuestion(
+    public ResponseEntity<QuestionResponse> addQuestion(            // Add a new question to an exam
             @PathVariable Long examId,
             @Valid @RequestBody AddQuestionRequest request
     ) {
@@ -31,7 +31,7 @@ public class QuestionController {
     }
 
     @PutMapping("/{questionId}")
-    public ResponseEntity<QuestionResponse> updateQuestion(
+    public ResponseEntity<QuestionResponse> updateQuestion(      // Update an existing question in an exam
             @PathVariable Long examId,
             @PathVariable Long questionId,
             @Valid @RequestBody AddQuestionRequest request
@@ -46,7 +46,7 @@ public class QuestionController {
     }
 
     @DeleteMapping("/{questionId}")
-    public ResponseEntity<Void> deleteQuestion(
+    public ResponseEntity<Void> deleteQuestion(                 // Delete a question from an exam
             @PathVariable Long examId,
             @PathVariable Long questionId
     ) {
@@ -59,7 +59,7 @@ public class QuestionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<QuestionResponse>> getQuestions(
+    public ResponseEntity<List<QuestionResponse>> getQuestions(     // Get all questions for a specific exam
             @PathVariable Long examId
     ) {
         return ResponseEntity.ok(
@@ -68,7 +68,7 @@ public class QuestionController {
     }
 
     @GetMapping("/{questionId}")
-    public ResponseEntity<QuestionResponse> getQuestionById(
+    public ResponseEntity<QuestionResponse> getQuestionById(        // Get a specific question by its ID for a specific exam
             @PathVariable Long examId,
             @PathVariable Long questionId
     ) {

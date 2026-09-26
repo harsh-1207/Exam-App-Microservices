@@ -16,19 +16,17 @@ and injects user identity into headers for downstream services.
 @Configuration
 public class SecurityConfig {
 
-    @Bean
-    public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
-        /*
+	@Bean
+	public SecurityWebFilterChain securityWebFilterChain(ServerHttpSecurity http) {
+		/*
         CSRF is needed when you use sessions + cookies (browser-based auth)
         You are using JWT (stateless, header-based auth)
         So CSRF is unnecessary.
         */
-        return http
-                .csrf(csrf -> csrf.disable())
-                .authorizeExchange(ex -> ex
-                        .anyExchange().permitAll()      // Allow ALL requests through Spring Security (No authentication, No role checks, No blocking)
-                )
-                .build();
-    }
+		return http
+			.csrf(csrf -> csrf.disable())
+			.authorizeExchange(ex -> ex.anyExchange().permitAll() // Allow ALL requests through Spring Security (No authentication, No role checks, No blocking)
+			)
+			.build();
+	}
 }
-

@@ -8,7 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.HandlerInterceptor;
-import org.springframework.web.servlet.config.annotation.*;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /*
 Flow:
@@ -28,55 +29,48 @@ If session expired → redirected to /login.
 @Configuration
 public class WebConfig implements WebMvcConfigurer {
 
-    // Registers your custom AuthInterceptor.
-    // Applies it to all paths under /student/**, /teacher/**, /admin/**.
-    @Override
-    public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(new AuthInterceptor())
-                .addPathPatterns("/student/**", "/teacher/**", "/admin/**");
-    }
+	// Registers your custom AuthInterceptor.
+	// Applies it to all paths under /student/**, /teacher/**, /admin/**.
+	@Override
+	public void addInterceptors(InterceptorRegistry registry) {
+		registry.addInterceptor(new AuthInterceptor()).addPathPatterns("/student/**", "/teacher/**", "/admin/**");
+	}
 
-    // Inner Class
-    // Implements HandlerInterceptor → runs before controller methods.
-    static class AuthInterceptor implements HandlerInterceptor {
+	// Inner Class
+	// Implements HandlerInterceptor → runs before controller methods.
+	static class AuthInterceptor implements HandlerInterceptor {
 
-        @Override
-        public boolean preHandle(HttpServletRequest req,
-                                 HttpServletResponse res,
-                                 Object handler) {
+		@Override
+		public boolean preHandle(HttpServletRequest req, HttpServletResponse res, Object handler) {
+			HttpSession session = req.getSession(false);
 
-            HttpSession session = req.getSession(false);
+			AuthResponse auth = session != null ? (AuthResponse) session.getAttribute("authResponse") : null;
 
-            AuthResponse auth =
-                    session != null
-                            ? (AuthResponse) session.getAttribute("authResponse")
-                            : null;
+			// Custom Exceptions
+			// Getting Handled at GlobalExceptionHandler
 
-            // Custom Exceptions
-            // Getting Handled at GlobalExceptionHandler
+			// session expired -> back to login page
+			if (auth == null || auth.getToken() == null) {
+				throw new SessionExpiredException("Session expired or not logged in");
+			}
 
-            // session expired -> back to login page
-            if (auth == null || auth.getToken() == null) {
-                throw new SessionExpiredException("Session expired or not logged in");
-            }
+			String role = (String) session.getAttribute("role");
+			String uri = req.getRequestURI();
 
-            String role = (String) session.getAttribute("role");
-            String uri = req.getRequestURI();
+			// session role and URI role should be same
+			if (uri.startsWith("/student") && !role.equals("STUDENT")) {
+				throw new RoleMismatchException("Only STUDENT can access this page");
+			}
 
-            // session role and URI role should be same
-            if (uri.startsWith("/student") && !role.equals("STUDENT")) {
-                throw new RoleMismatchException("Only STUDENT can access this page");
-            }
+			if (uri.startsWith("/teacher") && !role.equals("TEACHER")) {
+				throw new RoleMismatchException("Only TEACHER can access this page");
+			}
 
-            if (uri.startsWith("/teacher") && !role.equals("TEACHER")) {
-                throw new RoleMismatchException("Only TEACHER can access this page");
-            }
+			if (uri.startsWith("/admin") && !role.equals("ADMIN")) {
+				throw new RoleMismatchException("Only ADMIN can access this page");
+			}
 
-            if (uri.startsWith("/admin") && !role.equals("ADMIN")) {
-                throw new RoleMismatchException("Only ADMIN can access this page");
-            }
-
-            return true;
-        }
-    }
+			return true;
+		}
+	}
 }

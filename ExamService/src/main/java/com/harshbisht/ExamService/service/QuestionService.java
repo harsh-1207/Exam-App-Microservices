@@ -41,12 +41,6 @@ public class QuestionService {
             throw new ResourceNotFoundException("Exam not found");
         }
 
-        // FIX: toResponse() maps isCorrect — this is used by teachers viewing their
-        // own questions. Students use getExamForAttempt() in ExamService which returns
-        // ExamAttemptResponse / OptionAttemptResponse (no isCorrect field).
-        // The GET /questions endpoint is still secured to STUDENT+TEACHER, but
-        // isCorrect is only meaningful to the teacher who owns the exam.
-        // If you want to enforce this at the service level, add a role check here.
         return questionRepository.findByExamId(examId).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -57,9 +51,6 @@ public class QuestionService {
         ExamEntity exam = examRepository.findById(examId)
                 .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
 
-        // FIX: Add ownership check. Without this, any teacher could add questions
-        // to another teacher's exam. ExamService's editExam checks ownership but
-        // the question-level add/update/delete endpoints had no such guard.
         assertTeacherOwnsExam(exam);
 
         if (request.getQuestionText() == null || request.getQuestionText().isBlank()) {
@@ -157,12 +148,6 @@ public class QuestionService {
             throw new InvalidRequestException("Question does not belong to this exam");
         }
 
-        // FIX: The old code called exam.getQuestions().remove(question).
-        // List.remove() uses equals() — QuestionEntity has @Data which generates
-        // equals() based on ALL fields including the lazy-loaded options collection.
-        // This is unreliable and can silently fail (returns false, nothing deleted).
-        // The correct approach is to delete via the repository directly; the
-        // orphanRemoval on ExamEntity.questions handles cascade automatically.
         questionRepository.delete(question);
     }
 

@@ -10,5 +10,6 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class CreateSubjectRequest {
-    private String name;
+
+	private String name;
 }

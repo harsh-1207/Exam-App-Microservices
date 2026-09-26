@@ -8,13 +8,6 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 
 import java.time.LocalDateTime;
 
-/**
- * FIX: ExamService had no GlobalExceptionHandler at all. Every RuntimeException
- * was bubbling up as a 500 Internal Server Error with a full stack trace in the
- * response body — leaking implementation details to clients.
- *
- * Now each domain exception maps to a meaningful HTTP status code.
- */
 @ControllerAdvice
 public class GlobalExceptionHandler {
 

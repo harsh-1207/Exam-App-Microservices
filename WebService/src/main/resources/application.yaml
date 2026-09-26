@@ -3,7 +3,9 @@ spring:
     name: WEB-SERVICE
 server:
   port: 8083
-
+  servlet:
+    session:
+      timeout: 15m
 eureka:
   instance:
     hostname: localhost
@@ -11,14 +13,8 @@ eureka:
     instance-id: ${spring.application.name}:${server.port}
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
-
-  servlet:
-    session:
-      timeout: 15m   # auto logout after 15 minutes inactivity
-
+      defaultZone: ${EUREKA_URL:http://localhost:8761/eureka/}
 jwt:
   secret: ${JWT_SECRET:supersecretkeysupersecretkeysadasdkasdkashdkashdaskdhaskdhaskjd}
-
 internal:
   secret: ${INTERNAL_SECRET:gateway-secret-123456789101112131415}

@@ -73,11 +73,6 @@ public class JwtFilter extends OncePerRequestFilter {
             }
 
         } catch (Exception e) {
-            // SECURITY FIX: was System.out.println(...) — printed raw exception
-            // details (including JWT parsing internals) straight to stdout on
-            // every request, in production too. Use a real logger at debug
-            // level instead; a malformed/expired token is routine, not an
-            // application error worth WARN/ERROR noise.
             log.debug("JWT validation failed: {}", e.getMessage());
 
             SecurityContextHolder.clearContext();

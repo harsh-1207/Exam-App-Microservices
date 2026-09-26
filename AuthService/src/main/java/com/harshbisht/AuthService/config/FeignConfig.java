@@ -15,13 +15,13 @@ validate this secret and assign a SERVICE role, allowing secure internal communi
 @Configuration
 public class FeignConfig {
 
-    @Value("${internal.secret}")
-    private String internalSecret;
+	@Value("${internal.secret}")
+	private String internalSecret;
 
-    @Bean
-    public RequestInterceptor requestInterceptor() {
-        return template -> {
-            template.header("X-Internal-Secret", internalSecret);
-        };
-    }
+	@Bean
+	public RequestInterceptor requestInterceptor() {
+		return template -> {
+			template.header("X-Internal-Secret", internalSecret);
+		};
+	}
 }

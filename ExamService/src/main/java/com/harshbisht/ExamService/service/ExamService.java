@@ -3,6 +3,7 @@ package com.harshbisht.ExamService.service;
 import com.harshbisht.ExamService.dto.ExamDTO.*;
 import com.harshbisht.ExamService.dto.OptionDTO.OptionEditRequest;
 import com.harshbisht.ExamService.dto.QuestionDTO.QuestionEditRequest;
+import com.harshbisht.ExamService.dto.QuestionDTO.QuestionResponse;
 import com.harshbisht.ExamService.entity.ExamEntity;
 import com.harshbisht.ExamService.entity.OptionEntity;
 import com.harshbisht.ExamService.entity.QuestionEntity;
@@ -16,9 +17,11 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional; // FIX: spring, not jakarta
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Service
@@ -28,13 +31,6 @@ public class ExamService {
     private final ExamRepository examRepository;
     private final SubjectRepository subjectRepository;
 
-    /**
-     * FIX: The old version called Long.parseLong(principal.toString()).
-     * The principal stored in HeaderAuthFilter is already a Long — toString() then
-     * parseLong() is a round-trip that throws if the principal is ever not a plain
-     * numeric string (e.g. "internal-service" for ROLE_SERVICE callers).
-     * Cast directly instead.
-     */
     private Long getCurrentUserId() {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
         Object principal = auth.getPrincipal();
@@ -98,10 +94,6 @@ public class ExamService {
         return toResponse(examRepository.save(exam));
     }
 
-    // FIX: Use spring @Transactional, not jakarta. The jakarta annotation is not
-    // recognised by Spring's transaction proxy — the transaction is never started,
-    // so Hibernate flushes silently outside a managed context and dirty-checking
-    // behaviour becomes unpredictable.
     @Transactional
     public ExamResponse editExam(Long examId, EditExamRequest request) {
         ExamEntity exam = examRepository.findById(examId)
@@ -109,15 +101,14 @@ public class ExamService {
 
         assertOwnership(exam);
 
-        if (exam.isPublished()) {
-            throw new InvalidRequestException("Cannot edit a published exam. Unpublish it first.");
-        }
-
         SubjectEntity subject = subjectRepository.findById(request.getSubjectId())
                 .orElseThrow(() -> new ResourceNotFoundException("Subject not found"));
 
         exam.setTitle(request.getTitle());
         exam.setSubject(subject);
+        if (request.getPublished() != null) {
+            exam.setPublished(request.getPublished());
+        }
 
         if (request.getQuestions() != null) {
             syncQuestions(exam, request.getQuestions());
@@ -228,7 +219,7 @@ public class ExamService {
     }
 
     private ExamResponse toResponse(ExamEntity entity) {
-        return new ExamResponse(entity.getId(), entity.getTitle(), entity.isPublished());
+        return new ExamResponse(entity.getId(), entity.getTitle(), entity.isPublished(), entity.getTeacherId());
     }
 
     private void syncQuestions(ExamEntity exam, List<QuestionEditRequest> questionRequests) {
@@ -308,7 +299,25 @@ public class ExamService {
                 .id(exam.getId())
                 .title(exam.getTitle())
                 .published(exam.isPublished())
+                .subjectId(exam.getSubject().getId())
                 .questions(questionResponses)
                 .build();
+    }
+
+    public com.harshbisht.ExamService.dto.internal.ExamEvaluationResponse getEvaluationData(Long examId) {
+        ExamEntity exam = examRepository.findById(examId)
+                .orElseThrow(() -> new ResourceNotFoundException("Exam not found"));
+        var questions = exam.getQuestions().stream().map(q -> {
+            Long correctOptionId = q.getOptions().stream()
+                    .filter(OptionEntity::isCorrect)
+                    .map(OptionEntity::getId)
+                    .findFirst()
+                    .orElseThrow(() -> new InvalidRequestException("Question " + q.getId() + " has no correct option"));
+            return com.harshbisht.ExamService.dto.internal.ExamEvaluationResponse.QuestionEvaluation.builder()
+                    .questionId(q.getId()).marks(1L).correctOptionId(correctOptionId).build();
+        }).toList();
+        return com.harshbisht.ExamService.dto.internal.ExamEvaluationResponse.builder()
+                .examId(exam.getId()).teacherId(exam.getTeacherId()).title(exam.getTitle()).published(exam.isPublished())
+                .totalMarks(questions.size()).passingPercentage(40.0).questions(questions).build();
     }
 }

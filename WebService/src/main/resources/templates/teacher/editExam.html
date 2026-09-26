@@ -4,116 +4,49 @@
     <meta charset="UTF-8">
     <title>Edit Exam</title>
     <style>
-        body {
-            margin: 0;
-            font-family: 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #f5f7ff, #eef8f2);
-            color: #1f2937;
-        }
-        .page-shell {
-            max-width: 980px;
-            margin: 0 auto;
-            padding: 24px;
-        }
-        .topbar {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: #0f766e;
-            color: #fff;
-            border-radius: 18px;
-            padding: 16px 24px;
-            box-shadow: 0 12px 30px rgba(15, 118, 110, 0.18);
-            margin-bottom: 24px;
-        }
-        .brand { font-size: 1.3rem; font-weight: 700; }
-        .nav-links { display: flex; gap: 16px; }
-        .nav-links a, .logout-btn {
-            color: #ccfbf1;
-            text-decoration: none;
-            font-weight: 600;
-            padding: 10px 12px;
-            border-radius: 10px;
-        }
-        .nav-links a:hover, .logout-btn:hover { background: rgba(255,255,255,0.12); }
-        .panel {
-            background: #fff;
-            border-radius: 20px;
-            box-shadow: 0 10px 28px rgba(15, 23, 42, 0.08);
-            padding: 32px;
-        }
-        h2 { margin-top: 0; }
-        .exam-card {
-            background: #f8fafc;
-            border: 1px solid #e5e7eb;
-            border-radius: 14px;
-            padding: 16px 18px;
-            margin-bottom: 20px;
-        }
-        .question-box {
-            border: 1px solid #dbeafe;
-            border-radius: 12px;
-            background: #f8fbff;
-            padding: 16px;
-            margin-top: 16px;
-        }
-        .option-list {
-            margin: 12px 0 0;
-            padding-left: 18px;
-        }
-        .option-list li { margin: 8px 0; }
-        .btn {
-            display: inline-block;
-            padding: 12px 16px;
-            border-radius: 10px;
-            text-decoration: none;
-            font-weight: 700;
-            margin-top: 12px;
-        }
-        .secondary { background: #e5e7eb; color: #111827; }
+        body{font-family:Segoe UI,sans-serif;background:#f4f7fb;margin:0;color:#172033}.wrap{max-width:1000px;margin:30px auto;padding:0 20px}.card,.q{background:#fff;border-radius:14px;padding:22px;margin:15px 0;box-shadow:0 4px 18px #0000000d}.field{margin:12px 0}input[type=text]{width:100%;box-sizing:border-box;padding:11px;border:1px solid #cbd5e1;border-radius:8px}.opt{display:grid;grid-template-columns:35px 1fr;gap:8px;margin:8px 0}.actions{display:flex;gap:10px}.btn{border:0;padding:12px 18px;border-radius:8px;font-weight:700;cursor:pointer}.save{background:#0f766e;color:white}.add{background:#2563eb;color:white}.remove{background:#fee2e2;color:#991b1b}.back{background:#dc2626;color:#fff;text-decoration:none}.status{display:flex;gap:18px;align-items:center}
     </style>
 </head>
 <body>
-<div class="page-shell">
-    <nav class="topbar">
-        <div class="brand">Exam Portal</div>
-        <div class="nav-links">
-            <a href="/teacher/home">Dashboard</a>
-            <a href="/teacher/subjects">Subjects</a>
+<div th:replace="~{fragments/role-nav :: teacherNav('subjects')}"></div>
+<div class="wrap">
+    <form th:action="@{/teacher/editExam/{id}(id=${exam.id})}" method="post" id="editForm">
+        <div class="card"><h1>Edit Exam</h1><input type="hidden" name="subjectId" th:value="${exam.subjectId}">
+            <div class="field"><label>Exam name</label><input type="text" name="title" th:value="${exam.title}"
+                                                              required></div>
+            <div class="field status"><b>Status</b><label><input type="radio" name="published" value="false"
+                                                                 th:checked="${!exam.published}">
+                Draft</label><label><input type="radio" name="published" value="true" th:checked="${exam.published}">
+                Published</label></div>
         </div>
-        <a href="/logout" class="logout-btn">Logout</a>
-    </nav>
-
-    <div class="panel">
-        <h2>Edit Exam</h2>
-
-        <div class="exam-card">
-            <p><strong>Exam ID:</strong> <span th:text="${exam.id}">-</span></p>
-            <p><strong>Exam Title:</strong> <span th:text="${exam.title}">-</span></p>
-            <p><strong>Status:</strong> <span th:text="${exam.published ? 'Published' : 'Draft'}">-</span></p>
-        </div>
-
-        <div th:if="${exam.questions != null and !#lists.isEmpty(exam.questions)}">
-            <div class="question-box" th:each="question : ${exam.questions}">
-                <h3 th:text="${question.questionText}">Question</h3>
-                <ul class="option-list">
-                    <li th:each="option : ${question.options}">
-                        <span th:text="${option.text}"></span>
-                        <span th:if="${option.correct}" style="color:green; font-weight:700;"> (Correct)</span>
-                    </li>
-                </ul>
-                <div style="margin-top:10px;">
-                    <a th:href="@{/teacher/exams/{examId}/questions/{questionId}/edit(examId=${exam.id},questionId=${question.id})}" class="btn" style="background:#0ea5a4;color:#fff;">Edit Question</a>
-                </div>
+        <div id="questions">
+            <div class="q" th:each="q,qs:${exam.questions}"><input type="hidden" name="questionId" th:value="${q.id}">
+                <h3>Question <span th:text="${qs.count}"></span></h3><input type="text" name="questionText"
+                                                                            th:value="${q.questionText}" required>
+                <div class="opt" th:each="o,os:${q.options}"><input type="hidden" name="optionIdFlat"
+                                                                    th:value="${o.id}"><input type="radio"
+                                                                                              th:name="'correct_'+${qs.index}"
+                                                                                              th:value="${os.index}"
+                                                                                              th:checked="${o.correct}"
+                                                                                              onchange="syncCorrect()"><input
+                        type="text" name="optionTextFlat" th:value="${o.text}" required></div>
+                <input type="hidden" name="correctIndex" th:id="'correctIndex_'+${qs.index}" value="0">
+                <button type="button" class="btn remove" onclick="this.closest('.q').remove(); renumber();">Remove
+                    Question
+                </button>
             </div>
         </div>
-
-        <div th:if="${exam.questions == null or #lists.isEmpty(exam.questions)}">
-            <p>No questions have been added to this exam yet.</p>
+        <div class="card">
+            <div class="actions">
+                <button type="button" class="btn add" onclick="addQuestion()">+ Add Question</button>
+                <button type="submit" class="btn save">Submit Changes</button>
+                <a class="btn back" th:href="@{/teacher/subjects/{subjectId}/exams(subjectId=${exam.subjectId})}">Go
+                    Back Without Saving</a></div>
         </div>
-
-        <a th:href="@{/teacher/subjects}" class="btn secondary">Back to Subjects</a>
-    </div>
+    </form>
 </div>
+<script th:inline="javascript">
+    let next=[[${exam.questions != null ? #lists.size(exam.questions) : 0}]];function addQuestion(){const i=next++;const d=document.createElement('div');d.className='q';d.innerHTML=`<input type="hidden" name="questionId" value="0"><h3>New Question</h3><input type="text" name="questionText" placeholder="Question" required>${[0,1,2,3].map(j=>`<div class="opt"><input type="hidden" name="optionIdFlat" value="0"><input type="radio" name="correct_${i}" value="${j}" ${j===0?'checked':''} onchange="syncCorrect()"><input type="text" name="optionTextFlat" placeholder="Option ${j+1}" required></div>`).join('')}<input type="hidden" name="correctIndex" id="correctIndex_${i}" value="0"><button type="button" class="btn remove" onclick="this.closest('.q').remove(); renumber();">Remove Question</button>`;document.getElementById('questions').appendChild(d);renumber()}function renumber(){document.querySelectorAll('#questions .q').forEach((q,i)=>{q.querySelector('h3').textContent='Question '+(i+1);q.querySelectorAll('input[type=radio]').forEach((r,j)=>{r.name='correct_'+i;r.value=j});let h=q.querySelector('input[name=correctIndex]');h.id='correctIndex_'+i});syncCorrect()}function syncCorrect(){document.querySelectorAll('#questions .q').forEach((q,i)=>{const c=q.querySelector('input[type=radio]:checked');q.querySelector('input[name=correctIndex]').value=c?c.value:0})}document.getElementById('editForm').addEventListener('submit',syncCorrect);renumber();
+</script>
 </body>
 </html>

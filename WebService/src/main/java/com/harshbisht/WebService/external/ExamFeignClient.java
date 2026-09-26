@@ -47,8 +47,14 @@ public interface ExamFeignClient {
     @GetMapping("/exams/{examId}/full")
     ExamDetailResponse getExamWithQuestions(@PathVariable Long examId);
 
+    @GetMapping("/exams/my")
+    List<ExamResponse> getMyExams();
+
     @PutMapping("/exams/{examId}/publish")
     public ResponseEntity<ExamResponse> publishExam(@PathVariable Long examId);
+
+    @PutMapping("/exams/{examId}/unpublish")
+    public ResponseEntity<ExamResponse> unpublishExam(@PathVariable Long examId);
 
     @PutMapping("/exams/{examId}/full")
     public ResponseEntity<ExamResponse> editFullExam(
@@ -58,6 +64,9 @@ public interface ExamFeignClient {
     // 🔹 Delete exam
     @DeleteMapping("/exams/{examId}")
     public ResponseEntity<Void> deleteExam(@PathVariable Long examId);
+
+    @GetMapping("/exams/{examId}/attempt")
+    com.harshbisht.WebService.external.dto.AttemptDTO.ExamAttemptResponse getExamForAttempt(@PathVariable Long examId);
 
     // *********************************************************************************************************************
 

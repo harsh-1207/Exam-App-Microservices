@@ -1,109 +1,70 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>Available Exams</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: 'Segoe UI', sans-serif;
-      background: linear-gradient(135deg, #f8fafc, #e2e8f0);
-      color: #0f172a;
-    }
-    .page-shell {
-      max-width: 960px;
-      margin: 0 auto;
-      padding: 24px;
-    }
-    .topbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #0f172a;
-      color: #fff;
-      border-radius: 18px;
-      padding: 16px 24px;
-      margin-top: 24px;
-      box-sizing: border-box;
-    }
-    .brand { font-weight: 700; font-size: 1.2rem; }
-    .nav-links { display: flex; gap: 16px; }
-    .nav-links a, .logout-btn {
-      color: #e2e8f0;
-      text-decoration: none;
-      font-weight: 600;
-      padding: 10px 12px;
-      border-radius: 10px;
-    }
-    .nav-links a:hover, .logout-btn:hover { background: rgba(255,255,255,0.12); }
-    .panel {
-      background: #fff;
-      border-radius: 20px;
-      box-shadow: 0 14px 30px rgba(15,23,42,0.08);
-      padding: 32px;
-      margin-top: 24px;
-    }
-    h2 { margin-top: 0; }
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 16px;
-    }
-    th, td {
-      padding: 14px 12px;
-      border-bottom: 1px solid #e5e7eb;
-      text-align: left;
-    }
-    th { background: #eff6ff; }
-    .action-btn {
-      display: inline-block;
-      text-decoration: none;
-      background: #2563eb;
-      color: white;
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-weight: 600;
-    }
-    .empty {
-      text-align: center;
-      padding: 20px;
-      color: #475569;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <title>Subject Exams</title>
+    <style>
+        body{margin:0;font-family:'Segoe UI',sans-serif;background:linear-gradient(135deg,#f8fafc,#e2e8f0);color:#0f172a}.page-shell{max-width:1000px;margin:0 auto;padding:24px}.panel{background:#fff;border-radius:20px;box-shadow:0 14px 30px rgba(15,23,42,.08);padding:30px;margin-top:24px}.section{margin-top:28px}.section h2{margin-bottom:6px}.hint{color:#64748b;margin-top:0}table{width:100%;border-collapse:collapse;margin-top:14px}th,td{padding:14px 12px;border-bottom:1px solid #e5e7eb;text-align:left}th{background:#eff6ff}.btn{display:inline-block;text-decoration:none;color:#fff;padding:9px 13px;border-radius:8px;font-weight:700;background:#2563eb}.report{background:#0f766e}.empty{padding:18px;background:#f8fafc;border-radius:10px;color:#64748b}.back{display:inline-block;margin-top:24px;color:#1d4ed8;font-weight:700;text-decoration:none}
+    </style>
 </head>
 <body>
 <div th:replace="~{fragments/role-nav :: studentNav('subjects')}"></div>
-
 <div class="page-shell">
-  <div class="panel">
-    <h2>Available Exams</h2>
-
-    <div th:if="${exams != null and !#lists.isEmpty(exams)}">
-      <table>
-        <thead>
-        <tr>
-          <th>Exam</th>
-          <th>Status</th>
-          <th>Action</th>
-        </tr>
-        </thead>
-        <tbody>
-        <tr th:each="exam : ${exams}">
-          <td th:text="${exam.title}">Exam title</td>
-          <td th:text="${exam.published ? 'Published' : 'Draft'}">Status</td>
-          <td>
-            <a class="action-btn" th:href="@{/student/takeExam/{id}(id=${exam.id})}">Start</a>
-          </td>
-        </tr>
-        </tbody>
-      </table>
+    <div class="panel">
+        <h1>Exams</h1>
+        <section class="section">
+            <h2>Not Taken</h2>
+            <p class="hint">Published exams that are still available for you to attempt.</p>
+            <div class="empty" th:if="${#lists.isEmpty(examViews.?[!taken and exam.published])}">You have no pending
+                exams in this subject.
+            </div>
+            <table th:if="${!#lists.isEmpty(examViews.?[!taken and exam.published])}">
+                <thead>
+                <tr>
+                    <th>Exam</th>
+                    <th>Posted By</th>
+                    <th>Status</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="view : ${examViews}" th:if="${!view.taken and view.exam.published}">
+                    <td th:text="${view.exam.title}">Exam</td>
+                    <td th:text="${view.teacherName}">Teacher</td>
+                    <td>Published</td>
+                    <td><a class="btn" th:href="@{/student/takeExam/{id}(id=${view.exam.id})}">Take Exam</a></td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+        <section class="section">
+            <h2>Taken</h2>
+            <p class="hint">Exams you have already submitted.</p>
+            <div class="empty" th:if="${#lists.isEmpty(examViews.?[taken])}">You have not taken an exam in this subject
+                yet.
+            </div>
+            <table th:if="${!#lists.isEmpty(examViews.?[taken])}">
+                <thead>
+                <tr>
+                    <th>Exam</th>
+                    <th>Posted By</th>
+                    <th>Score</th>
+                    <th>Action</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="view : ${examViews}" th:if="${view.taken}">
+                    <td th:text="${view.exam.title}">Exam</td>
+                    <td th:text="${view.teacherName}">Teacher</td>
+                    <td th:text="${view.result.score} + ' / ' + ${view.result.totalMarks}">0 / 0</td>
+                    <td><a class="btn report" th:href="@{/student/results/{id}(id=${view.result.id})}">View Report</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </section>
+        <a class="back" th:href="@{/student/subjects}">← Back to subjects</a>
     </div>
-
-    <div class="empty" th:if="${exams == null or #lists.isEmpty(exams)}">
-      No exams are available for this subject yet.
-    </div>
-    <p style="margin-top: 20px;"><a th:href="@{/student/subjects}" style="color: #1d4ed8; font-weight: 600;">Back to subjects</a></p>
-  </div>
 </div>
 </body>
 </html>

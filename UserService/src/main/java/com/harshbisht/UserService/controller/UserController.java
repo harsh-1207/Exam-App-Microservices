@@ -15,41 +15,39 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class UserController {
 
-    private final UserService userService;
+	private final UserService userService;
 
-    @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public UserResponse createUser(                 // Create a new user
-            @Valid @RequestBody UserRequest user
-    ) {
-        return userService.createUser(user);
-    }
+	@PostMapping
+	@ResponseStatus(HttpStatus.CREATED)
+	public UserResponse createUser( // Create a new user
+		@Valid @RequestBody UserRequest user
+	) {
+		return userService.createUser(user);
+	}
 
-    @GetMapping("/me")
-    public UserResponse getMyDetails(
-            HttpServletRequest request
-    ) {
-        Long currentUserId = (Long) request.getAttribute("userId");
+	@GetMapping("/me")
+	public UserResponse getMyDetails(HttpServletRequest request) {
+		Long currentUserId = (Long) request.getAttribute("userId");
 
-        if (currentUserId == null) {
-            throw new UnauthorizedAccessException("Authentication required");
-        }
+		if (currentUserId == null) {
+			throw new UnauthorizedAccessException("Authentication required");
+		}
 
-        return userService.getMyDetails(currentUserId);
-    }
+		return userService.getMyDetails(currentUserId);
+	}
 
-    @GetMapping("/{id}")
-    public UserResponse getUser(                    // Get a specific user by their ID
-            @PathVariable Long id,
-            HttpServletRequest request
-    ) {
+	@GetMapping("/{id}/summary")
+	public UserResponse getUserSummary(@PathVariable Long id) {
+		return userService.getUserSummary(id);
+	}
 
-        Long requestingUserId =
-                (Long) request.getAttribute("userId");
+	@GetMapping("/{id}")
+	public UserResponse getUser( // Get a specific user by their ID
+		@PathVariable Long id,
+		HttpServletRequest request
+	) {
+		Long requestingUserId = (Long) request.getAttribute("userId");
 
-        return userService.getUser(
-                id,
-                requestingUserId
-        );
-    }
+		return userService.getUser(id, requestingUserId);
+	}
 }

@@ -23,9 +23,6 @@ public class RegisterRequest {
     @Email(message = "Email must be a valid address")
     private String email;
 
-    // SECURITY FIX: no minimum length existed before — a password of "a" was
-    // accepted. 8 chars is a reasonable floor; pair with a strength meter
-    // client-side if you want more than this baseline server-side check.
     @NotBlank(message = "Password is required")
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;

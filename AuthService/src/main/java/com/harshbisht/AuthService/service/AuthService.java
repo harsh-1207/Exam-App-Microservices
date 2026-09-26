@@ -3,10 +3,12 @@ package com.harshbisht.AuthService.service;
 import com.harshbisht.AuthService.dto.LoginRequest;
 import com.harshbisht.AuthService.dto.RegisterRequest;
 import com.harshbisht.AuthService.dto.UserDto;
-import com.harshbisht.AuthService.dto.UserEntity;
 import com.harshbisht.AuthService.entity.AuthUser;
 import com.harshbisht.AuthService.entity.Role;
-import com.harshbisht.AuthService.exception.*;
+import com.harshbisht.AuthService.exception.DuplicateEmailException;
+import com.harshbisht.AuthService.exception.InvalidCredentialsException;
+import com.harshbisht.AuthService.exception.RegistrationNotAllowedException;
+import com.harshbisht.AuthService.exception.UserProfileCreationException;
 import com.harshbisht.AuthService.external.UserFeignClient;
 import com.harshbisht.AuthService.repository.AuthUserRepository;
 import com.harshbisht.AuthService.security.JwtUtil;
@@ -70,20 +72,6 @@ public class AuthService {
         return "User Registered Successfully";
     }
 
-    /**
-     * SECURITY FIX: previously threw UserNotFoundException (404) when the email
-     * didn't exist, and InvalidCredentialsException (401) when the password was
-     * wrong. Two different exceptions with two different status codes let an
-     * attacker enumerate valid registered emails just by watching which error
-     * came back — a classic username-enumeration vulnerability (OWASP ASVS 2.1.7 /
-     * CWE-203). Both failure paths now throw the exact same exception with the
-     * exact same message, so a bad email and a bad password are indistinguishable
-     * from the response.
-     *
-     * Also wired in LoginAttemptService: 5 failed attempts locks that email out
-     * for 15 minutes, closing the brute-force / credential-stuffing gap that
-     * existed before (unlimited attempts, no penalty).
-     */
     public String login(LoginRequest req) {
 
         loginAttemptService.assertNotLocked(req.getEmail());

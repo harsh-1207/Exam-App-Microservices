@@ -5,9 +5,9 @@ spring:
   application:
     name: EXAM-SERVICE
   datasource:
-    url: jdbc:mysql://localhost:3306/exam_db
-    username: root
-    password: Mockingbird@1234
+    url: ${EXAM_DB_URL:jdbc:mysql://localhost:3306/exam_db}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:Mockingbird@1234}
   jpa:
     hibernate:
       ddl-auto: update
@@ -25,4 +25,4 @@ eureka:
     fetch-registry: true
 
 internal:
-  secret: gateway-secret-123456789101112131415
+  secret: ${INTERNAL_SECRET:gateway-secret-123456789101112131415}

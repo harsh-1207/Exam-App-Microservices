@@ -11,17 +11,17 @@ import lombok.*;
 @Builder
 public class AnswerEntity {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	private Long id;
 
-    private Long questionId;
+	private Long questionId;
 
-    private Long selectedOptionId;
+	private Long selectedOptionId;
 
-    private Boolean correct;
+	private Boolean correct;
 
-    @ManyToOne
-    @JoinColumn(name = "result_id")
-    private ResultEntity result;
+	@ManyToOne
+	@JoinColumn(name = "result_id")
+	private ResultEntity result;
 }

@@ -16,5 +16,6 @@ public class ExamDetailResponse {
     private Long id;
     private String title;
     private boolean published;
+    private Long subjectId;
     private List<QuestionResponse> questions;
 }

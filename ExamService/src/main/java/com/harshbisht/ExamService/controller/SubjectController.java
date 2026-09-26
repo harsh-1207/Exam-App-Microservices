@@ -17,8 +17,24 @@ public class SubjectController {
 
     private final SubjectService subjectService;
 
+    @GetMapping
+    public ResponseEntity<List<SubjectResponse>> getAllSubjects() {        // Get all subjects
+        return ResponseEntity.ok(
+                subjectService.getAllSubjects()
+        );
+    }
+
+    @GetMapping("/{subjectId}")
+    public ResponseEntity<SubjectResponse> getSubject(                   // Get a specific subject by its ID
+            @PathVariable Long subjectId
+    ) {
+        return ResponseEntity.ok(
+                subjectService.getSubject(subjectId)
+        );
+    }
+
     @PostMapping
-    public ResponseEntity<SubjectResponse> createSubject(
+    public ResponseEntity<SubjectResponse> createSubject(           // Create a new subject
             @Valid @RequestBody CreateSubjectRequest request
     ) {
         return ResponseEntity.ok(
@@ -27,7 +43,7 @@ public class SubjectController {
     }
 
     @PutMapping("/{subjectId}")
-    public ResponseEntity<SubjectResponse> updateSubject(
+    public ResponseEntity<SubjectResponse> updateSubject(           // Update an existing subject
             @PathVariable Long subjectId,
             @Valid @RequestBody CreateSubjectRequest request
     ) {
@@ -40,26 +56,10 @@ public class SubjectController {
     }
 
     @DeleteMapping("/{subjectId}")
-    public ResponseEntity<Void> deleteSubject(
+    public ResponseEntity<Void> deleteSubject(                      // Delete a subject
             @PathVariable Long subjectId
     ) {
         subjectService.deleteSubject(subjectId);
         return ResponseEntity.noContent().build();
-    }
-
-    @GetMapping
-    public ResponseEntity<List<SubjectResponse>> getAllSubjects() {
-        return ResponseEntity.ok(
-                subjectService.getAllSubjects()
-        );
-    }
-
-    @GetMapping("/{subjectId}")
-    public ResponseEntity<SubjectResponse> getSubject(
-            @PathVariable Long subjectId
-    ) {
-        return ResponseEntity.ok(
-                subjectService.getSubject(subjectId)
-        );
     }
 }
